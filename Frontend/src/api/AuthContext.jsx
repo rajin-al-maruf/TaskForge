@@ -1,9 +1,9 @@
 import { createContext, useEffect, useState } from "react";
-import { loginUser } from "./authApi";
+import { loginUser } from "./authApi.js";
 
 export const AuthContext = createContext()
 
-export const AuthProvider = async ({children}) => {
+export const AuthProvider = ({children}) => {
     const [user, setUser] = useState(null)
     const [loading, setLoading] = useState(true)
 

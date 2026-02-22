@@ -1,10 +1,15 @@
-import React from "react"
+import {BrowserRouter as Router, Routes, Route, Navigate} from 'react-router-dom'
+import AuthPage from './pages/AuthPage'
 
 function App() {
   return (
-    <div>
-      <h1 class="text-3xl font-bold text-blue-600">Task Forge</h1>
-    </div>
+      <Router>
+        <Routes>
+          <Route path='/auth' element={<AuthPage/>}/>
+
+          <Route path='*' element={<Navigate to='/auth'/>}/>
+        </Routes>
+      </Router>
   )
 }
 
