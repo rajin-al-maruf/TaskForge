@@ -1,5 +1,5 @@
 import { createContext, useEffect, useState } from "react";
-import { loginUser } from "./authApi.js";
+import { loginUser, registerUser } from "./authApi.js";
 
 export const AuthContext = createContext()
 
@@ -15,14 +15,33 @@ export const AuthProvider = ({children}) => {
         setLoading(false)
     },[])
 
-    const login = async (credential) => {
-        const data = await loginUser(credential)
+    const register = async (credential) => {
+        try {
+            const data = await registerUser(credential)
 
-        if(data.token){
-            localStorage.setItem("token", data.token)
-            setUser(data.user)
+            if(data.token){
+                localStorage.setItem("token", data.token)
+                setUser(data.user)
+            }
+            return data;
+        } catch (error) {
+            const message = error?.response?.data?.message || error.message
+            return { success: false, message }
         }
-        return data;
+    }
+    const login = async (credential) => {
+        try {
+            const data = await loginUser(credential)
+
+            if(data.token){
+                localStorage.setItem("token", data.token)
+                setUser(data.user)
+            }
+            return data;
+        } catch (error) {
+            const message = error?.response?.data?.message || error.message
+            return { success: false, message }
+        }
     }
 
     const logout = async () => {
@@ -31,7 +50,7 @@ export const AuthProvider = ({children}) => {
     }
 
     return(
-        <AuthContext.Provider value={{user, loading, login, logout}}>
+        <AuthContext.Provider value={{user, loading, setLoading, register, login, logout}}>
             {children}
         </AuthContext.Provider>
     )
