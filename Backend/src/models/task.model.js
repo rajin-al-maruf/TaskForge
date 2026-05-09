@@ -12,6 +12,10 @@ const taskSchema = new Schema(
             type: String,
             trim: true,
         },
+        list: {
+        type: String,
+        default: 'Personal'
+        },
         dueDate: Date,
         priority: {
             type: String,
@@ -19,7 +23,7 @@ const taskSchema = new Schema(
         },
         status: {
             type: String,
-            enum: ['pending', 'in-progress', 'completed']
+            enum: ['in-progress', 'completed']
         },
         owner: {
             type: mongoose.Schema.Types.ObjectId,

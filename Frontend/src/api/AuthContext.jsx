@@ -5,14 +5,16 @@ export const AuthContext = createContext()
 
 export const AuthProvider = ({children}) => {
     const [user, setUser] = useState(null)
-    const [loading, setLoading] = useState(true)
+    
+    // This state is ONLY for the initial app mount check
+    const [initialLoad, setInitialLoad] = useState(true)
 
     useEffect(() => {
         const token= localStorage.getItem('token')
         if(token){
             setUser({ loggedIn: true })
         }
-        setLoading(false)
+        setInitialLoad(false)
     },[])
 
     const register = async (credential) => {
@@ -21,7 +23,7 @@ export const AuthProvider = ({children}) => {
 
             if(data.token){
                 localStorage.setItem("token", data.token)
-                setUser(data.user)
+                setUser(data.user || { loggedIn: true })
             }
             return data;
         } catch (error) {
@@ -35,7 +37,7 @@ export const AuthProvider = ({children}) => {
 
             if(data.token){
                 localStorage.setItem("token", data.token)
-                setUser(data.user)
+                setUser(data.user || { loggedIn: true })
             }
             return data;
         } catch (error) {
@@ -50,7 +52,14 @@ export const AuthProvider = ({children}) => {
     }
 
     return(
-        <AuthContext.Provider value={{user, loading, setLoading, register, login, logout}}>
+        <AuthContext.Provider value={{
+            user, 
+            loading: initialLoad, 
+            setLoading: () => {}, // Dummy function to prevent Router unmounting!
+            register, 
+            login, 
+            logout
+        }}>
             {children}
         </AuthContext.Provider>
     )

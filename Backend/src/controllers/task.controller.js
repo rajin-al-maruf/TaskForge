@@ -3,7 +3,7 @@ import Task from '../models/task.model.js'
 
 const createTask = async (req, res) => {
     try {
-        const {title, description, dueDate, priority, status} = req.body;
+        const {title, description, dueDate, priority, status, list} = req.body;
 
         if (!title || title.trim() === "") {
             return res.status(400).json({ message: "Title is required" });
@@ -15,6 +15,7 @@ const createTask = async (req, res) => {
             dueDate,
             priority: priority || "medium",
             status: status || "in-progress",
+            list: list || "Personal",
             owner: req.user._id,
         })
 
@@ -22,11 +23,13 @@ const createTask = async (req, res) => {
             success: true,
             message: "A new task is created",
             task: {
-                title: task.title, 
-                description: task.description, 
-                dueDate: task.dueDate, 
+                _id: task._id,
+                title: task.title,
+                description: task.description,
+                dueDate: task.dueDate,
                 priority: task.priority,
                 status: task.status,
+                list: task.list,
                 owner: task.owner
             }
         })
