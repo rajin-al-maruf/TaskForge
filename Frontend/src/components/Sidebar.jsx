@@ -103,7 +103,7 @@ const Sidebar = ({activeTab, setActiveTab, customLists = [], onCreateList, onDel
                         if (onDeleteList) onDeleteList(list._id, list.name);
                       }
                     }}
-                    className='opacity-0 group-hover:opacity-100 text-gray-500 hover:text-red-400 transition-all duration-200 px-1'
+                    className='opacity-0 group-hover:opacity-100 text-gray-500 hover:text-red-400 transition-all duration-200 px-1 cursor-pointer'
                     aria-label={`Delete ${list.name} list`}
                   >
                     ✕

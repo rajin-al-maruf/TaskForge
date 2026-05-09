@@ -1,4 +1,5 @@
 import React, { useEffect, useMemo, useState } from 'react'
+import { toast } from 'sonner'
 import Sidebar from '../components/Sidebar.jsx'
 import MyTasks from '../components/MyTasks.jsx'
 import TodayTasks from '../components/TodayTasks.jsx'
@@ -18,7 +19,7 @@ const organizeTasks = (taskArray) => {
 }
 
 const Dashboard = () => {
-  const [activeTab, setActiveTab] = useState('tasks')
+  const [activeTab, setActiveTab] = useState('today')
   const [tasks, setTasks] = useState([])
   const [isLoading, setIsLoading] = useState(true)
   const [fetchError, setFetchError] = useState('')
@@ -80,9 +81,11 @@ const Dashboard = () => {
                 : task
             )
           ))
+          toast.success(response.message || 'Task updated successfully')
           handleCloseModal()
         } else {
           setTaskError(response.message || 'Unable to update task')
+          toast.error(response.message || 'Unable to update task')
         }
       } else {
         const response = await createTask({
@@ -91,13 +94,17 @@ const Dashboard = () => {
         })
         if (response.success) {
           setTasks((prev) => organizeTasks([response.task, ...prev]))
+          toast.success(response.message || 'Task created successfully')
           handleCloseModal()
         } else {
           setTaskError(response.message || 'Unable to create task')
+          toast.error(response.message || 'Unable to create task')
         }
       }
     } catch (error) {
-      setTaskError(error?.response?.data?.message || `Could not ${editingTask ? 'update' : 'create'} task`)
+      const errorMsg = error?.response?.data?.message || `Could not ${editingTask ? 'update' : 'create'} task`
+      setTaskError(errorMsg)
+      toast.error(errorMsg)
     }
   }
 
@@ -106,11 +113,15 @@ const Dashboard = () => {
       const response = await deleteTask(taskId)
       if (response.success) {
         setTasks((prev) => prev.filter((task) => task._id !== taskId))
+        toast.success(response.message || 'Task deleted successfully')
       } else {
         setFetchError(response.message || 'Unable to delete task')
+        toast.error(response.message || 'Unable to delete task')
       }
     } catch (error) {
-      setFetchError(error?.response?.data?.message || 'Could not delete task')
+      const errorMsg = error?.response?.data?.message || 'Could not delete task'
+      setFetchError(errorMsg)
+      toast.error(errorMsg)
     }
   }
 
@@ -125,11 +136,15 @@ const Dashboard = () => {
             item._id === task._id ? { ...item, status: nextStatus } : item
           )
         ))
+        toast.success(`Task marked as ${nextStatus}`)
       } else {
         setFetchError(response.message || 'Unable to update task status')
+        toast.error(response.message || 'Unable to update task status')
       }
     } catch (error) {
-      setFetchError(error?.response?.data?.message || 'Unable to update task')
+      const errorMsg = error?.response?.data?.message || 'Unable to update task'
+      setFetchError(errorMsg)
+      toast.error(errorMsg)
     }
   }
 
@@ -139,9 +154,13 @@ const Dashboard = () => {
       if (response.success) {
         setCustomLists((prev) => [...prev, response.list])
         setActiveTab(listName) // Auto-switch to the newly created list
+        toast.success('List created successfully')
+      } else {
+        toast.error(response.message || 'Failed to create list')
       }
     } catch (error) {
       console.error('Failed to create list:', error)
+      toast.error(error?.response?.data?.message || 'Failed to create list')
     }
   }
 
@@ -153,9 +172,13 @@ const Dashboard = () => {
         if (activeTab === listName) {
           setActiveTab('tasks'); // Go back to My Tasks if viewing the deleted list
         }
+        toast.success('List deleted successfully')
+      } else {
+        toast.error(response.message || 'Failed to delete list')
       }
     } catch (error) {
       console.error('Failed to delete list:', error);
+      toast.error(error?.response?.data?.message || 'Failed to delete list')
     }
   };
 

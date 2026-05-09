@@ -1,19 +1,22 @@
 import React from 'react';
 import TaskCard from './TaskCard.jsx';
+import EmptyTaskState from './EmptyTaskState.jsx';
 
 const MyTasks = ({ title = 'My Tasks', tasks, isLoading, error, onOpenModal, onEditTask, onToggleComplete, onDeleteTask }) => {
   return (
     <div className='w-full max-w-3xl mx-auto mt-16'>
-      <div className='flex items-center justify-between'>
-        <h1 className='text-white text-2xl font-semibold'>{title}</h1>
-        <button
-          onClick={() => onOpenModal()}
-          className='bg-brand-primary p-2 rounded-md text-white text-sm cursor-pointer hover:bg-brand-primary/90 transition'
-          aria-label='Add task'
-        >
-          + Add Task
-        </button>
-      </div>
+      {(tasks.length > 0 || isLoading) && (
+        <div className='flex items-center justify-between'>
+          <h1 className='text-white text-2xl font-semibold'>{title}</h1>
+          <button
+            onClick={() => onOpenModal()}
+            className='bg-brand-primary p-2 rounded-md text-white text-sm cursor-pointer hover:bg-brand-primary/90 transition'
+            aria-label='Add task'
+          >
+            + Add Task
+          </button>
+        </div>
+      )}
 
       {error && (
         <div className='mt-4 rounded-md border border-red-600 bg-red-950 p-4 text-sm text-red-300'>
@@ -25,9 +28,11 @@ const MyTasks = ({ title = 'My Tasks', tasks, isLoading, error, onOpenModal, onE
         {isLoading ? (
           <div className='bg-brand-surface p-4 rounded-md text-gray-400'>Loading tasks…</div>
         ) : tasks.length === 0 ? (
-          <div className='bg-brand-surface p-4 rounded-md text-gray-400'>
-            No tasks yet. Click + Add Task to create your first task.
-          </div>
+          <EmptyTaskState 
+            title="All caught up!" 
+            description="You have no tasks here right now. Take a break, or add a new task to your list." 
+            onAdd={() => onOpenModal()} 
+          />
         ) : (
           tasks.map((task) => (
             <TaskCard
