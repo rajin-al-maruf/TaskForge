@@ -17,6 +17,11 @@ app.use('/api/lists', listRouter)
 
 //ex route: http://localhost:5000/api/users/register
 
+// Default health check route for browser testing
+app.get('/', (req, res) => {
+    res.status(200).send('TaskForge API is up and running! 🚀');
+});
+
 // Connect to MongoDB for Vercel Serverless Environment
 const connectDB = async () => {
     // Prevent reconnecting if already connected
