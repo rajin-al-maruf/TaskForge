@@ -1,15 +1,21 @@
-import { useState } from 'react';
+import { useState, useContext } from 'react';
 import logo from '../assets/logo.png';
 import { PiSidebarSimpleLight } from "react-icons/pi";
 import { RiTaskLine } from "react-icons/ri";
 import { FaRegCalendarAlt } from "react-icons/fa";
 import { GrTarget } from "react-icons/gr";
+import { toast } from 'sonner';
 import CreateListModal from './CreateListModal.jsx';
+import { AuthContext } from '../api/AuthContext.jsx';
 
 
 const Sidebar = ({activeTab, setActiveTab, customLists = [], onCreateList, onDeleteList}) => {
   const [collapsed, setCollapsed] = useState(false);
   const [isListModalOpen, setIsListModalOpen] = useState(false);
+  
+  const { user } = useContext(AuthContext);
+  const isProUser = user?.userType === 'pro';
+  const FREE_LIST_LIMIT = 3; // Free users can create up to 3 custom lists
 
   const handleTabClick = (tab) => {
     setActiveTab(tab);
@@ -66,7 +72,13 @@ const Sidebar = ({activeTab, setActiveTab, customLists = [], onCreateList, onDel
             <div className='flex items-center justify-between mb-2 px-2'>
               <p className='text-xs font-bold uppercase tracking-wider text-gray-600'>My Lists</p>
               <button 
-                onClick={() => setIsListModalOpen(true)}
+                onClick={() => {
+                  if (!isProUser && customLists.length >= FREE_LIST_LIMIT) {
+                    toast.info(`Free plan is limited to ${FREE_LIST_LIMIT} custom lists. Upgrade to Pro for unlimited lists!`, { icon: '✨' });
+                    return;
+                  }
+                  setIsListModalOpen(true);
+                }}
                 className='text-gray-400 hover:text-brand-primary transition-colors cursor-pointer text-lg leading-none' 
                 title="Add new list"
               >

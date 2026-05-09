@@ -3,7 +3,7 @@ import Task from '../models/task.model.js'
 
 const createTask = async (req, res) => {
     try {
-        const {title, description, dueDate, priority, status, list} = req.body;
+        const {title, description, dueDate, priority, status, list, timeEstimate, subtasks} = req.body;
 
         if (!title || title.trim() === "") {
             return res.status(400).json({ message: "Title is required" });
@@ -13,25 +13,18 @@ const createTask = async (req, res) => {
             title,
             description,
             dueDate,
-            priority: priority || "medium",
+            priority: priority || "none",
             status: status || "in-progress",
             list: list || "Personal",
+            timeEstimate: timeEstimate || 25,
+            subtasks: subtasks || [],
             owner: req.user._id,
         })
 
         res.status(201).json({
             success: true,
             message: "A new task is created",
-            task: {
-                _id: task._id,
-                title: task.title,
-                description: task.description,
-                dueDate: task.dueDate,
-                priority: task.priority,
-                status: task.status,
-                list: task.list,
-                owner: task.owner
-            }
+            task
         })
     } catch (error) {
         res.status(500).json({ success: false, message: "Internal server error" })
@@ -65,7 +58,7 @@ const updateTask = async (req, res) => {
         }
 
         const updatedTask = await Task.findByIdAndUpdate(taskId, req.body, {new: true, runValidators: true})
-        res.status(201).json({ success: true, message: "Task updated successfully!" , updatedTask})
+        res.status(200).json({ success: true, message: "Task updated successfully!" , updatedTask})
     } catch (error) {
         res.status(500).json({ success: false, message: "Internal server error" })
     }

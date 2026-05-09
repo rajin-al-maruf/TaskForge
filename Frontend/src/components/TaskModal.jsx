@@ -1,5 +1,7 @@
-import { useState, useEffect, useRef } from 'react';
-import { FaRegCalendarAlt } from 'react-icons/fa';
+import { useState, useEffect, useRef, useContext } from 'react';
+import { FaRegCalendarAlt, FaTimes, FaRegClock } from 'react-icons/fa';
+import DatePicker from './DatePicker.jsx';
+import { AuthContext } from '../api/AuthContext.jsx';
 
 const padDate = (value) => String(value).padStart(2, '0');
 const toLocalISODate = (date) => `${date.getFullYear()}-${padDate(date.getMonth() + 1)}-${padDate(date.getDate())}`;
@@ -13,45 +15,81 @@ const parseDateString = (dateStr) => {
   return isNaN(parsed.getTime()) ? null : parsed;
 };
 
+const timeOptions = Array.from({ length: 24 * 4 }).map((_, i) => {
+  const h = Math.floor(i / 4);
+  const m = (i % 4) * 15;
+  return `${String(h).padStart(2, '0')}:${String(m).padStart(2, '0')}`;
+});
+
+const formatDisplayTime = (timeStr) => {
+  if (!timeStr) return '';
+  const [h, m] = timeStr.split(':').map(Number);
+  const ampm = h >= 12 ? 'PM' : 'AM';
+  const hour12 = h % 12 || 12;
+  return `${hour12}:${String(m).padStart(2, '0')} ${ampm}`;
+};
+
 const TaskModal = ({ isOpen, onClose, onSave, editingTask, error, defaultDate = '', customLists = [], activeTab = 'tasks' }) => {
   const [formData, setFormData] = useState({
     name: '',
     description: '',
     date: '',
-    priority: 'medium',
-    list: 'Personal'
+    time: '',
+    priority: 'none',
+    list: 'Personal',
+    timeEstimate: 25,
+    subtasks: []
   });
   const [showDatePicker, setShowDatePicker] = useState(false);
-  const [currentMonth, setCurrentMonth] = useState(new Date());
+  const [showTimePicker, setShowTimePicker] = useState(false);
   const [showPriorityPicker, setShowPriorityPicker] = useState(false);
   const [showListPicker, setShowListPicker] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [localError, setLocalError] = useState('');
   const [isMounted, setIsMounted] = useState(isOpen);
   const [isVisible, setIsVisible] = useState(false);
+  const [newSubtask, setNewSubtask] = useState('');
   
+  const { user } = useContext(AuthContext);
+  const isProUser = user?.userType === 'pro';
   const listRef = useRef(null);
   const dateRef = useRef(null);
+  const timeRef = useRef(null);
   const priorityRef = useRef(null);
 
   useEffect(() => {
     if (isOpen) {
+      let initialDate = defaultDate;
+      let initialTime = '';
+      
+      if (editingTask?.dueDate) {
+        const dateObj = parseDateString(editingTask.dueDate);
+        if (dateObj) {
+          initialDate = toLocalISODate(dateObj);
+          if (dateObj.getHours() !== 0 || dateObj.getMinutes() !== 0) {
+            initialTime = `${padDate(dateObj.getHours())}:${padDate(dateObj.getMinutes())}`;
+          }
+        }
+      }
+
       setFormData({
         name: editingTask?.title || '',
         description: editingTask?.description || '',
-        date: editingTask?.dueDate ? (() => {
-          const date = parseDateString(editingTask.dueDate);
-          return date ? toLocalISODate(date) : defaultDate;
-        })() : defaultDate,
-        priority: editingTask?.priority || 'medium',
+        date: initialDate,
+        time: initialTime,
+        priority: editingTask?.priority || 'none',
         list: editingTask?.list || (
           activeTab !== 'tasks' && activeTab !== 'today' && activeTab !== 'calendar' ? activeTab : 'Personal'
-        )
+        ),
+        timeEstimate: editingTask?.timeEstimate || 25,
+        subtasks: editingTask?.subtasks || []
       });
       setLocalError('');
       setShowDatePicker(false);
+      setShowTimePicker(false);
       setShowPriorityPicker(false);
       setShowListPicker(false);
+      setNewSubtask('');
     }
   }, [isOpen, editingTask, defaultDate]);
 
@@ -75,6 +113,9 @@ const TaskModal = ({ isOpen, onClose, onSave, editingTask, error, defaultDate = 
       if (dateRef.current && !dateRef.current.contains(event.target)) {
         setShowDatePicker(false);
       }
+      if (timeRef.current && !timeRef.current.contains(event.target)) {
+        setShowTimePicker(false);
+      }
       if (priorityRef.current && !priorityRef.current.contains(event.target)) {
         setShowPriorityPicker(false);
       }
@@ -88,75 +129,6 @@ const TaskModal = ({ isOpen, onClose, onSave, editingTask, error, defaultDate = 
     setFormData((prev) => ({ ...prev, [name]: value }));
   };
 
-  const getDaysInMonth = (date) => {
-    return new Date(date.getFullYear(), date.getMonth() + 1, 0).getDate();
-  };
-
-  const getFirstDayOfMonth = (date) => {
-    const day = new Date(date.getFullYear(), date.getMonth(), 1).getDay();
-    return day === 0 ? 6 : day - 1; // Adjust so Monday is 0, Sunday is 6
-  };
-
-  const handleDateSelect = (day) => {
-    const selectedDate = new Date(currentMonth.getFullYear(), currentMonth.getMonth(), day);
-    setFormData((prev) => ({
-      ...prev,
-      date: toLocalISODate(selectedDate)
-    }));
-    setShowDatePicker(false);
-  };
-
-  const handleQuickSelect = (offset) => {
-    const date = new Date();
-    if (offset === 'tomorrow') {
-      date.setDate(date.getDate() + 1);
-    } else if (offset === 'nextweek') {
-      date.setDate(date.getDate() + 7);
-    }
-    setFormData((prev) => ({
-      ...prev,
-      date: toLocalISODate(date)
-    }));
-    setShowDatePicker(false);
-  };
-
-  const renderCalendar = () => {
-    const daysInMonth = getDaysInMonth(currentMonth);
-    const firstDay = getFirstDayOfMonth(currentMonth);
-    const days = [];
-    const monthYear = currentMonth.toLocaleDateString('en-US', { month: 'long', year: 'numeric' });
-
-    // Empty cells for days before month starts
-    for (let i = 0; i < firstDay; i++) {
-      days.push(<div key={`empty-${i}`} className='text-gray-700 text-sm text-center py-1.5'></div>);
-    }
-
-    // Days of month
-    for (let day = 1; day <= daysInMonth; day++) {
-      const dateStr = toLocalISODate(new Date(currentMonth.getFullYear(), currentMonth.getMonth(), day));
-      const isSelected = formData.date === dateStr;
-      const isToday = dateStr === toLocalISODate(new Date());
-
-      days.push(
-        <button
-          key={day}
-          onClick={() => handleDateSelect(day)}
-          className={`text-sm py-1.5 rounded-md transition-all cursor-pointer font-medium ${
-            isSelected
-              ? 'bg-brand-primary text-white shadow-md'
-              : isToday
-              ? 'bg-neutral-700 text-white'
-              : 'text-gray-400 hover:text-white hover:bg-neutral-800'
-          }`}
-        >
-          {day}
-        </button>
-      );
-    }
-
-    return { days, monthYear };
-  };
-
   const handleSubmit = async (event) => {
     event.preventDefault();
     setLocalError('');
@@ -168,13 +140,27 @@ const TaskModal = ({ isOpen, onClose, onSave, editingTask, error, defaultDate = 
 
     setIsSubmitting(true);
 
+    let combinedDate = formData.date;
+    if (formData.date) {
+      const d = parseDateString(formData.date);
+      if (formData.time) {
+        const [hours, minutes] = formData.time.split(':').map(Number);
+        d.setHours(hours, minutes, 0, 0);
+      } else {
+        d.setHours(0, 0, 0, 0);
+      }
+      combinedDate = d.toISOString();
+    }
+
     try {
       await onSave({
         title: formData.name.trim(),
         description: formData.description.trim(),
-        dueDate: formData.date,
+        dueDate: combinedDate,
         priority: formData.priority,
-        list: formData.list
+        list: formData.list,
+        timeEstimate: Number(formData.timeEstimate) || 25,
+        subtasks: formData.subtasks
       });
     } catch (submitError) {
       setLocalError(submitError?.response?.data?.message || `Could not ${editingTask ? 'update' : 'create'} task`);
@@ -189,12 +175,9 @@ const TaskModal = ({ isOpen, onClose, onSave, editingTask, error, defaultDate = 
 
   if (!isMounted) return null;
 
-  // Only calculate calendar logic once per render, and only if the popover is open
-  const calendarData = showDatePicker ? renderCalendar() : { days: [], monthYear: '' };
-
   return (
-    <div className={`fixed inset-0 z-20 bg-black/50 flex items-center justify-center p-4 backdrop-blur-[2px] transition-all duration-300 ${isVisible ? 'opacity-100' : 'opacity-0'}`}>
-      <div className={`w-full max-w-xl bg-neutral-900 border border-neutral-800/60 rounded-xl shadow-2xl transition-all duration-300 ${isVisible ? 'scale-100 translate-y-0' : 'scale-95 translate-y-4'}`}>
+    <div className={`fixed inset-0 z-20 bg-black/50 flex p-4 overflow-y-auto backdrop-blur-[2px] transition-all duration-300 ${isVisible ? 'opacity-100' : 'opacity-0'}`}>
+      <div className={`w-full max-w-xl bg-neutral-900 border border-neutral-800/60 rounded-xl shadow-2xl transition-all duration-300 m-auto ${isVisible ? 'scale-100 translate-y-0' : 'scale-95 translate-y-4'}`}>
         {/* Header */}
         <div className='flex items-center justify-between px-6 py-4 border-b border-neutral-800 bg-neutral-900/50 rounded-t-xl'>
           <h2 className='text-white text-base font-semibold'>Task Details</h2>
@@ -230,6 +213,7 @@ const TaskModal = ({ isOpen, onClose, onSave, editingTask, error, defaultDate = 
               onClick={() => {
                 setShowListPicker(!showListPicker);
                 setShowDatePicker(false);
+                setShowTimePicker(false);
                 setShowPriorityPicker(false);
               }}
               className='text-sm text-brand-primary/80 font-medium hover:text-brand-primary transition-colors cursor-pointer flex items-center gap-1'
@@ -272,12 +256,13 @@ const TaskModal = ({ isOpen, onClose, onSave, editingTask, error, defaultDate = 
 
           {/* Date and Priority Section */}
           <div className='border-b border-neutral-800/60 py-3 flex items-center gap-3'>
-            {/* Date Button & Popover */}
+            {/* Date Popover */}
             <div className='relative z-20' ref={dateRef}>
               <button
                 type='button'
                 onClick={() => {
                   setShowDatePicker(!showDatePicker);
+                  setShowTimePicker(false);
                   setShowPriorityPicker(false);
                   setShowListPicker(false);
                 }}
@@ -289,7 +274,7 @@ const TaskModal = ({ isOpen, onClose, onSave, editingTask, error, defaultDate = 
               >
                 <FaRegCalendarAlt className={showDatePicker ? 'text-brand-primary' : 'text-gray-400'} />
                 {formData.date
-                  ? new Date(formData.date).toLocaleDateString('en-US', {
+                  ? new Date(formData.date + 'T00:00:00').toLocaleDateString('en-US', {
                       month: 'short',
                       day: 'numeric',
                       year: 'numeric'
@@ -297,85 +282,77 @@ const TaskModal = ({ isOpen, onClose, onSave, editingTask, error, defaultDate = 
                   : 'Set Date'}
               </button>
 
+              <DatePicker 
+                isOpen={showDatePicker} 
+                date={formData.date} 
+                onChange={(val) => setFormData((prev) => ({ ...prev, date: val }))} 
+                onClose={() => setShowDatePicker(false)} 
+              />
+            </div>
+
+            {/* Time Popover */}
+            <div className='relative z-20' ref={timeRef}>
+              <button
+                type='button'
+                onClick={() => {
+                  if (!formData.date) return;
+                  setShowTimePicker(!showTimePicker);
+                  setShowDatePicker(false);
+                  setShowPriorityPicker(false);
+                  setShowListPicker(false);
+                }}
+                disabled={!formData.date}
+                title='Optional: Set a time'
+                className={`flex items-center gap-2 px-3 py-1.5 rounded-lg border transition-all duration-200 text-sm font-medium cursor-pointer ${
+                  !formData.date 
+                    ? 'opacity-50 cursor-not-allowed bg-neutral-900 border-neutral-800 text-gray-600'
+                    : formData.time
+                    ? 'bg-brand-primary/10 border-brand-primary/50 text-brand-primary shadow-sm'
+                    : 'bg-neutral-800/50 border-neutral-700/50 text-gray-300 hover:bg-neutral-700 hover:text-white'
+                }`}
+              >
+                <FaRegClock className={formData.time ? 'text-brand-primary' : 'text-gray-400'} />
+                {formData.time ? formatDisplayTime(formData.time) : 'Time'}
+              </button>
+
               <div
-                className={`absolute left-0 top-full mt-2 w-70 bg-neutral-950/95 backdrop-blur-xl border border-neutral-800/80 rounded-xl p-4 shadow-2xl transition-all duration-300 origin-top-left ${
-                  showDatePicker
+                className={`absolute left-0 top-full mt-2 w-40 bg-neutral-950/95 backdrop-blur-xl border border-neutral-800/80 rounded-xl p-1.5 shadow-2xl transition-all duration-300 origin-top-left max-h-48 overflow-y-auto [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none] z-50 ${
+                  showTimePicker
                     ? 'opacity-100 scale-100 translate-y-0 pointer-events-auto'
                     : 'opacity-0 scale-95 -translate-y-2 pointer-events-none'
                 }`}
               >
-                {/* Month navigation */}
-                <div className='flex items-center justify-between mb-3'>
-                  <h3 className='text-sm text-white font-semibold'>
-                    {calendarData.monthYear}
-                  </h3>
-                  <div className='flex gap-1'>
-                    <button
-                      type='button'
-                      onClick={() =>
-                        setCurrentMonth(
-                          new Date(currentMonth.getFullYear(), currentMonth.getMonth() - 1)
-                        )
-                      }
-                      className='h-7 w-7 flex items-center justify-center text-gray-400 hover:text-brand-primary hover:bg-brand-primary/10 rounded transition text-lg cursor-pointer'
-                    >
-                      ‹
-                    </button>
-                    <button
-                      type='button'
-                      onClick={() =>
-                        setCurrentMonth(
-                          new Date(currentMonth.getFullYear(), currentMonth.getMonth() + 1)
-                        )
-                      }
-                      className='h-7 w-7 flex items-center justify-center text-gray-400 hover:text-brand-primary hover:bg-brand-primary/10 rounded transition text-lg cursor-pointer'
-                    >
-                      ›
-                    </button>
-                  </div>
-                </div>
-
-                {/* Calendar grid header */}
-                <div className='grid grid-cols-7 gap-1 mb-1'>
-                  {['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'].map((day) => (
-                    <div key={day} className='text-gray-500 text-[10px] font-bold tracking-wide text-center py-1.5'>
-                      {day}
-                    </div>
-                  ))}
-                </div>
-
-                {/* Calendar days */}
-                <div className='grid grid-cols-7 gap-1 mb-3'>
-                  {calendarData.days}
-                </div>
-
-                {/* Quick select buttons */}
-                <div className='space-y-0.5 pt-3 border-t border-neutral-800/80'>
+                <button
+                  type='button'
+                  onClick={() => {
+                    setFormData((prev) => ({ ...prev, time: '' }));
+                    setShowTimePicker(false);
+                  }}
+                  className={`w-full flex items-center px-3 py-2 text-sm rounded-lg transition-colors cursor-pointer ${
+                    !formData.time
+                      ? 'bg-brand-primary/20 text-brand-primary font-medium'
+                      : 'text-gray-400 hover:bg-neutral-800/50 hover:text-white'
+                  }`}
+                >
+                  No Time
+                </button>
+                {timeOptions.map((time) => (
                   <button
-                    type='button'
-                    onClick={() => handleQuickSelect('tomorrow')}
-                    className='w-full text-left text-sm text-gray-400 hover:text-brand-primary hover:bg-brand-primary/5 px-2 py-1.5 rounded transition-colors cursor-pointer flex items-center gap-2'
-                  >
-                    Tomorrow
-                  </button>
-                  <button
-                    type='button'
-                    onClick={() => handleQuickSelect('nextweek')}
-                    className='w-full text-left text-sm text-gray-400 hover:text-brand-primary hover:bg-brand-primary/5 px-2 py-1.5 rounded transition-colors cursor-pointer flex items-center gap-2'
-                  >
-                    Next week
-                  </button>
-                  <button
+                    key={time}
                     type='button'
                     onClick={() => {
-                      setFormData((prev) => ({ ...prev, date: '' }));
-                      setShowDatePicker(false);
+                      setFormData((prev) => ({ ...prev, time }));
+                      setShowTimePicker(false);
                     }}
-                    className='w-full text-left text-sm text-gray-400 hover:text-brand-primary hover:bg-brand-primary/5 px-2 py-1.5 rounded transition-colors cursor-pointer flex items-center gap-2'
+                    className={`w-full flex items-center px-3 py-2 text-sm rounded-lg transition-colors cursor-pointer ${
+                      formData.time === time
+                        ? 'bg-brand-primary/20 text-brand-primary font-medium'
+                        : 'text-gray-400 hover:bg-neutral-800/50 hover:text-white'
+                    }`}
                   >
-                    No Date
+                    {formatDisplayTime(time)}
                   </button>
-                </div>
+                ))}
               </div>
             </div>
 
@@ -386,6 +363,7 @@ const TaskModal = ({ isOpen, onClose, onSave, editingTask, error, defaultDate = 
                 onClick={() => {
                   setShowPriorityPicker(!showPriorityPicker);
                   setShowDatePicker(false);
+                  setShowTimePicker(false);
                   setShowListPicker(false);
                 }}
                 className={`flex items-center gap-2 px-3 py-1.5 rounded-lg border transition-all duration-200 text-sm font-medium capitalize cursor-pointer ${
@@ -396,7 +374,9 @@ const TaskModal = ({ isOpen, onClose, onSave, editingTask, error, defaultDate = 
               >
                 <span
                   className={`h-2 w-2 rounded-full ${
-                    formData.priority === 'high'
+                    formData.priority === 'none'
+                      ? 'bg-neutral-600'
+                      : formData.priority === 'high'
                       ? 'bg-red-400'
                       : formData.priority === 'medium'
                       ? 'bg-yellow-400'
@@ -413,7 +393,7 @@ const TaskModal = ({ isOpen, onClose, onSave, editingTask, error, defaultDate = 
                     : 'opacity-0 scale-95 -translate-y-2 pointer-events-none'
                 }`}
               >
-                {['high', 'medium', 'low'].map((priority) => (
+                {['none', 'high', 'medium', 'low'].map((priority) => (
                   <button
                     key={priority}
                     type='button'
@@ -429,7 +409,9 @@ const TaskModal = ({ isOpen, onClose, onSave, editingTask, error, defaultDate = 
                   >
                     <span
                       className={`h-1.5 w-1.5 rounded-full ${
-                        priority === 'high'
+                        priority === 'none'
+                          ? 'bg-neutral-600'
+                          : priority === 'high'
                           ? 'bg-red-400'
                           : priority === 'medium'
                           ? 'bg-yellow-400'
@@ -455,10 +437,72 @@ const TaskModal = ({ isOpen, onClose, onSave, editingTask, error, defaultDate = 
             />
           </div>
 
+          {/* Time & Subtasks */}
+          {isProUser && (
+            <div className='grid grid-cols-1 md:grid-cols-2 gap-6 border-t border-neutral-800/60 pt-5'>
+              <div>
+                <label className='text-[10px] font-bold tracking-widest text-gray-500 block mb-2'>FOCUS TIME</label>
+                <div className='flex items-center gap-2 bg-neutral-950 border border-neutral-800/80 rounded-lg px-3 py-2'>
+                  <input
+                    type='number'
+                    name='timeEstimate'
+                    value={formData.timeEstimate}
+                    onChange={handleInputChange}
+                    min="1"
+                    max="240"
+                    className='w-full bg-transparent text-white text-sm outline-none'
+                  />
+                  <span className='text-gray-500 text-xs font-medium'>minutes</span>
+                </div>
+              </div>
+              <div>
+                <label className='text-[10px] font-bold tracking-widest text-gray-500 block mb-2'>SUB-TASKS</label>
+                <input 
+                  type="text" 
+                  value={newSubtask} 
+                  onChange={(e) => setNewSubtask(e.target.value)}
+                  onKeyDown={(e) => {
+                    if(e.key === 'Enter') {
+                      e.preventDefault();
+                      if(newSubtask.trim()) {
+                        setFormData(prev => ({...prev, subtasks: [...prev.subtasks, { title: newSubtask.trim(), completed: false }]}));
+                        setNewSubtask('');
+                      }
+                    }
+                  }}
+                  placeholder="Type subtask and press enter..." 
+                  className="w-full text-sm text-gray-300 bg-neutral-950 border border-neutral-800/80 rounded-lg px-3 py-2 outline-none focus:border-brand-primary transition-colors placeholder-neutral-600"
+                />
+                {formData.subtasks.length > 0 && (
+              <div className='space-y-2 mt-3'>
+                    {formData.subtasks.map((st, idx) => (
+                      <div key={idx} className='flex items-center gap-3 bg-neutral-950 border border-neutral-800/50 rounded-lg px-3 py-2 group'>
+                        <input
+                          type='checkbox'
+                          checked={st.completed}
+                          onChange={() => {
+                            const newSt = [...formData.subtasks];
+                            newSt[idx].completed = !newSt[idx].completed;
+                            setFormData(prev => ({...prev, subtasks: newSt}));
+                          }}
+                          className='w-3.5 h-3.5 rounded border-neutral-700 text-brand-primary focus:ring-brand-primary bg-neutral-900 cursor-pointer'
+                        />
+                        <span className={`text-sm text-gray-300 flex-1 truncate ${st.completed ? 'line-through opacity-50' : ''}`}>{st.title}</span>
+                        <button type="button" onClick={() => {
+                           setFormData(prev => ({...prev, subtasks: prev.subtasks.filter((_, i) => i !== idx)}));
+                        }} className="text-gray-600 opacity-0 group-hover:opacity-100 hover:text-red-400 transition-all cursor-pointer"><FaTimes size={12} /></button>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
+            </div>
+          )}
+
           {(error || localError) && <p className='text-red-400 text-sm font-medium bg-red-400/10 p-2 rounded border border-red-400/20'>{error || localError}</p>}
 
           {/* Save Button */}
-          <div className='flex justify-end mt-32'>
+          <div className='flex justify-end mt-8'>
             <button
               type='submit'
               disabled={isSubmitting}

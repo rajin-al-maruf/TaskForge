@@ -6,52 +6,28 @@ import TodayTasks from '../components/TodayTasks.jsx'
 import Calendar from '../components/Calendar.jsx'
 import ListTasks from '../components/ListTasks.jsx'
 import TaskModal from '../components/TaskModal.jsx'
-import { createTask, deleteTask, getTasks, updateTask } from '../api/taskApi.js'
-import { getLists, createList, deleteList } from '../api/listApi.js'
-
-const priorityOrder = { high: 1, medium: 2, low: 3 }
-
-const organizeTasks = (taskArray) => {
-  const activeTasks = taskArray.filter((task) => task.status !== 'completed')
-  const completedTasks = taskArray.filter((task) => task.status === 'completed')
-  activeTasks.sort((a, b) => priorityOrder[a.priority] - priorityOrder[b.priority])
-  return [...activeTasks, ...completedTasks]
-}
+import { createList, deleteList } from '../api/listApi.js'
+import { useTasks, organizeTasks, priorityOrder } from '../hooks/useTasks.js'
 
 const Dashboard = () => {
+  const { tasks, customLists, setCustomLists, isLoading, fetchError, saveTask, removeTask, toggleTaskComplete } = useTasks();
+  
   const [activeTab, setActiveTab] = useState('today')
-  const [tasks, setTasks] = useState([])
-  const [isLoading, setIsLoading] = useState(true)
-  const [fetchError, setFetchError] = useState('')
   const [taskError, setTaskError] = useState('')
   const [showModal, setShowModal] = useState(false)
   const [editingTask, setEditingTask] = useState(null)
-  const [customLists, setCustomLists] = useState([])
   const [defaultDate, setDefaultDate] = useState('')
+  const [filters, setFilters] = useState({ priority: 'all', status: 'all', list: 'all' })
+  const [sortBy, setSortBy] = useState('priority')
 
-  useEffect(() => {
-    const fetchTasks = async () => {
-      setIsLoading(true)
-      setFetchError('')
-
-      try {
-        const [taskRes, listRes] = await Promise.all([
-          getTasks(),
-          getLists().catch(() => ({ success: false, lists: [] }))
-        ])
-        
-        if (taskRes.success) setTasks(organizeTasks(taskRes.tasks))
-        else setFetchError(taskRes.message || 'Unable to load tasks')
-        if (listRes.success) setCustomLists(listRes.lists)
-      } catch (error) {
-        setFetchError(error?.response?.data?.message || 'Could not fetch tasks')
-      } finally {
-        setIsLoading(false)
-      }
-    }
-
-    fetchTasks()
-  }, [])
+  const allLists = useMemo(() => {
+    return [
+      { name: 'Personal' },
+      { name: 'Work' },
+      { name: 'Study' },
+      ...customLists.filter(l => l.name !== 'Personal' && l.name !== 'Work' && l.name !== 'Study')
+    ];
+  }, [customLists]);
 
   const handleOpenModal = (task = null, date = '') => {
     setTaskError('')
@@ -69,83 +45,13 @@ const Dashboard = () => {
 
   const handleSaveTask = async (taskData) => {
     setTaskError('')
-
-    try {
-      if (editingTask) {
-        const response = await updateTask(editingTask._id, taskData)
-        if (response.success) {
-          setTasks((prev) => organizeTasks(
-            prev.map((task) =>
-              task._id === editingTask._id
-                ? { ...task, ...response.updatedTask }
-                : task
-            )
-          ))
-          toast.success(response.message || 'Task updated successfully')
-          handleCloseModal()
-        } else {
-          setTaskError(response.message || 'Unable to update task')
-          toast.error(response.message || 'Unable to update task')
-        }
-      } else {
-        const response = await createTask({
-          ...taskData,
-          status: 'in-progress'
-        })
-        if (response.success) {
-          setTasks((prev) => organizeTasks([response.task, ...prev]))
-          toast.success(response.message || 'Task created successfully')
-          handleCloseModal()
-        } else {
-          setTaskError(response.message || 'Unable to create task')
-          toast.error(response.message || 'Unable to create task')
-        }
-      }
-    } catch (error) {
-      const errorMsg = error?.response?.data?.message || `Could not ${editingTask ? 'update' : 'create'} task`
-      setTaskError(errorMsg)
-      toast.error(errorMsg)
-    }
+    const result = await saveTask(taskData, editingTask);
+    if (result.success) handleCloseModal();
+    else setTaskError(result.message);
   }
 
   const handleDeleteTask = async (taskId) => {
-    try {
-      const response = await deleteTask(taskId)
-      if (response.success) {
-        setTasks((prev) => prev.filter((task) => task._id !== taskId))
-        toast.success(response.message || 'Task deleted successfully')
-      } else {
-        setFetchError(response.message || 'Unable to delete task')
-        toast.error(response.message || 'Unable to delete task')
-      }
-    } catch (error) {
-      const errorMsg = error?.response?.data?.message || 'Could not delete task'
-      setFetchError(errorMsg)
-      toast.error(errorMsg)
-    }
-  }
-
-  const toggleTaskComplete = async (task) => {
-    const nextStatus = task.status === 'completed' ? 'in-progress' : 'completed'
-
-    try {
-      const response = await updateTask(task._id, { status: nextStatus })
-      if (response.success) {
-        setTasks((prev) => organizeTasks(
-          prev.map((item) =>
-            item._id === task._id ? { ...item, status: nextStatus } : item
-          )
-        ))
-        toast.success(`Task marked as ${nextStatus}`)
-      } else {
-        setFetchError(response.message || 'Unable to update task status')
-        toast.error(response.message || 'Unable to update task status')
-      }
-    } catch (error) {
-      const errorMsg = error?.response?.data?.message || 'Unable to update task'
-      setFetchError(errorMsg)
-      toast.error(errorMsg)
-    }
+    await removeTask(taskId);
   }
 
   const handleCreateList = async (listName) => {
@@ -182,7 +88,50 @@ const Dashboard = () => {
     }
   };
 
-  const sortedTasks = useMemo(() => organizeTasks(tasks), [tasks])
+  const commonTaskProps = {
+    isLoading,
+    error: fetchError,
+    onOpenModal: handleOpenModal,
+    onEditTask: handleOpenModal,
+    onToggleComplete: toggleTaskComplete,
+    onDeleteTask: handleDeleteTask,
+    onUpdateTask: (task, updates) => saveTask({ ...task, ...updates }, task),
+    filters,
+    setFilters,
+    sortBy,
+    setSortBy,
+  };
+
+  const displayTasks = useMemo(() => {
+    let result = tasks.filter(task => {
+      if (filters.priority !== 'all' && task.priority !== filters.priority) return false;
+      if (filters.status !== 'all' && task.status !== filters.status) return false;
+      if (activeTab === 'tasks' || activeTab === 'today' || activeTab === 'calendar') {
+        if (filters.list !== 'all' && task.list !== filters.list) return false;
+      }
+      return true;
+    });
+
+    result.sort((a, b) => {
+      if (a.status === 'completed' && b.status !== 'completed') return 1;
+      if (a.status !== 'completed' && b.status === 'completed') return -1;
+      
+      if (sortBy === 'priority') {
+        return priorityOrder[a.priority] - priorityOrder[b.priority];
+      } else if (sortBy === 'due') {
+        if (!a.dueDate) return 1;
+        if (!b.dueDate) return -1;
+        return new Date(a.dueDate) - new Date(b.dueDate);
+      } else if (sortBy === 'recent') {
+        const dateA = a.createdAt ? new Date(a.createdAt) : new Date(0);
+        const dateB = b.createdAt ? new Date(b.createdAt) : new Date(0);
+        return dateB - dateA;
+      }
+      return 0;
+    });
+    
+    return result;
+  }, [tasks, filters, activeTab, sortBy]);
 
   const getLocalDateKey = () => {
     const now = new Date()
@@ -202,44 +151,31 @@ const Dashboard = () => {
         {activeTab === 'tasks' && (
           <MyTasks
             title='My Tasks'
-            tasks={sortedTasks}
-            isLoading={isLoading}
-            error={fetchError}
-            onOpenModal={handleOpenModal}
-            onEditTask={handleOpenModal}
-            onToggleComplete={toggleTaskComplete}
-            onDeleteTask={handleDeleteTask}
+            tasks={displayTasks}
+            allLists={allLists}
+            {...commonTaskProps}
           />
         )}
 
         {activeTab !== 'tasks' && activeTab !== 'today' && activeTab !== 'calendar' && (
           <ListTasks
             listName={activeTab}
-            tasks={sortedTasks.filter(t => t.list === activeTab)}
-            isLoading={isLoading}
-            error={fetchError}
-            onOpenModal={handleOpenModal}
-            onEditTask={handleOpenModal}
-            onToggleComplete={toggleTaskComplete}
-            onDeleteTask={handleDeleteTask}
+            tasks={displayTasks.filter(t => t.list === activeTab)}
+            {...commonTaskProps}
           />
         )}
 
         {activeTab === 'today' && (
           <TodayTasks
-            tasks={sortedTasks}
-            isLoading={isLoading}
-            error={fetchError}
-            onOpenModal={handleOpenModal}
-            onEditTask={handleOpenModal}
-            onToggleComplete={toggleTaskComplete}
-            onDeleteTask={handleDeleteTask}
+            tasks={displayTasks}
+            allLists={allLists}
+            {...commonTaskProps}
           />
         )}
 
         {activeTab === 'calendar' && (
           <Calendar
-            tasks={sortedTasks}
+            tasks={displayTasks}
             onOpenModal={handleOpenModal}
             onEditTask={handleOpenModal}
           />

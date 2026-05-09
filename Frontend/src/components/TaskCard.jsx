@@ -4,7 +4,16 @@ import { FaRegCircle, FaRegCheckCircle, FaTimes, FaRegCalendarAlt } from 'react-
 const priorityCircleColors = {
   high: 'text-red-300',
   medium: 'text-yellow-300',
-  low: 'text-green-300'
+  low: 'text-green-300',
+  none: 'text-gray-500'
+};
+
+const formatTaskDate = (dateStr) => {
+  const d = new Date(dateStr);
+  const dateString = d.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+  const hasTime = d.getHours() !== 0 || d.getMinutes() !== 0;
+  const timeString = hasTime ? ` • ${d.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' })}` : '';
+  return dateString + timeString;
 };
 
 const TaskCard = ({ task, onToggleComplete, onDelete, onEdit }) => {
@@ -48,16 +57,8 @@ const TaskCard = ({ task, onToggleComplete, onDelete, onEdit }) => {
             <div className='text-xs text-gray-500 mt-3 flex items-center gap-2'>
               <FaRegCalendarAlt className={`${completed ? 'text-gray-600' : 'text-brand-primary'}`} />
               <p className={`${completed ? 'text-gray-600' : ''}`}>
-                {task.dueDate ? new Date(task.dueDate).toLocaleDateString() : 'No date'}
+                {task.dueDate ? formatTaskDate(task.dueDate) : 'No date'}
               </p>
-              {task.list && (
-                <>
-                  <span className="w-1 h-1 rounded-full bg-neutral-700"></span>
-                  <span className={`px-2 py-0.5 rounded text-[10px] uppercase tracking-wider font-semibold ${completed ? 'text-gray-600 bg-neutral-800' : 'text-brand-primary bg-brand-primary/10'}`}>
-                    {task.list}
-                  </span>
-                </>
-              )}
             </div>
           </div>
         </div>

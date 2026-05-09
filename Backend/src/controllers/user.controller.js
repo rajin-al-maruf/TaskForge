@@ -27,7 +27,7 @@ const registerUser = async (req, res) => {
             success: true,
             token,
             message: "User registered successfully!!",
-            user: {id: user._id, firstName: user.firstName, lastName: user.lastName, email: user.email}
+            user: {id: user._id, firstName: user.firstName, lastName: user.lastName, email: user.email,  userType: user.userType}
         })
     } catch (error) {
         console.error("registerUser error", error);
@@ -61,7 +61,7 @@ const loginUser = async (req, res) => {
             success: true,
             message: "User login successfull!!",
             token,
-            user: {id: user._id, firstName: user.firstName, lastName: user.lastName, email: user.email}
+            user: {id: user._id, firstName: user.firstName, lastName: user.lastName, email: user.email,  userType: user.userType}
         })
     } catch (error) {
         console.error("loginUser error", error);

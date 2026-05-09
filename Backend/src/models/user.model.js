@@ -30,6 +30,11 @@ const userSchema = new Schema(
             minLength: 6,
             maxLength: 100
         },
+        userType: {
+            type: String,
+            enum: ['free', 'pro'],
+            default: 'free'
+        },
     },
     {
         timestamps: true

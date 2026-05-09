@@ -1,5 +1,6 @@
 import express from "express"
 import cors from "cors"
+import mongoose from "mongoose"
 
 const app = express();
 
@@ -15,5 +16,15 @@ app.use('/api/tasks', taskRouter)
 app.use('/api/lists', listRouter)
 
 //ex route: http://localhost:5000/api/users/register
+
+// Connect to MongoDB for Vercel Serverless Environment
+const connectDB = async () => {
+    // Prevent reconnecting if already connected
+    if (mongoose.connections[0].readyState) return;
+    
+    // Make sure the variable matches what you named it in your .env file!
+    await mongoose.connect(process.env.MONGO_URI || process.env.MONGODB_URI);
+}
+connectDB();
 
 export default app;

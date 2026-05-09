@@ -16,10 +16,19 @@ const taskSchema = new Schema(
         type: String,
         default: 'Personal'
         },
+        timeEstimate: {
+            type: Number,
+            default: 25
+        },
+        subtasks: [{
+            title: String,
+            completed: { type: Boolean, default: false }
+        }],
         dueDate: Date,
         priority: {
             type: String,
-            enum: ['low', 'medium', 'high']
+            enum: ['none', 'low', 'medium', 'high'],
+            default: 'none'
         },
         status: {
             type: String,

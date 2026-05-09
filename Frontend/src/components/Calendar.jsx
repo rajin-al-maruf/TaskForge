@@ -5,6 +5,7 @@ import {
   FaRegClock,
   FaRegCalendarCheck
 } from 'react-icons/fa';
+import EmptyTaskState from './EmptyTaskState.jsx';
 
 const views = ['day', 'week', 'month'];
 
@@ -81,6 +82,8 @@ const getPriorityColor = (priority) => {
       return 'text-yellow-300';
     case 'low':
       return 'text-green-300';
+    case 'none':
+      return 'text-gray-500';
     default:
       return 'text-gray-300';
   }
@@ -179,42 +182,42 @@ const Calendar = ({ tasks, onOpenModal, onEditTask }) => {
         </div>
       </header>
 
-      <div className='grid gap-4 xl:grid-cols-[280px_1fr]'>
-        <aside className='space-y-4 rounded-md border border-neutral-800 bg-neutral-950 p-4'>
+      <div className='flex flex-col-reverse xl:flex-row gap-6'>
+        <aside className='w-full xl:w-[300px] shrink-0 space-y-4 rounded-xl border border-neutral-800/50 bg-neutral-950/50 p-5'>
           <div className='flex items-center justify-between'>
             <div>
               <p className='text-xs uppercase tracking-[0.3em] text-gray-500'>Overview</p>
-              <h2 className='text-lg font-semibold text-white'>Today's view</h2>
+              <h2 className='text-lg font-semibold text-white'>Quick Stats</h2>
             </div>
             <FaRegClock className='text-brand-primary' />
           </div>
 
           <div className='grid gap-3'>
-            <div className='rounded-md border border-neutral-800 bg-neutral-900 p-3'>
+            <div className='rounded-xl border border-neutral-800/80 bg-neutral-900/40 p-4'>
               <p className='text-xs uppercase tracking-[0.2em] text-gray-500'>Tasks today</p>
               <p className='mt-2 text-2xl font-semibold text-white'>{(tasksByDate[getDateKey(new Date())] || []).length}</p>
             </div>
-            <div className='rounded-md border border-neutral-800 bg-neutral-900 p-3'>
+            <div className='rounded-xl border border-neutral-800/80 bg-neutral-900/40 p-4'>
               <p className='text-xs uppercase tracking-[0.2em] text-gray-500'>This week</p>
               <p className='mt-2 text-2xl font-semibold text-white'>{weekBlocks.reduce((sum, block) => sum + block.tasks.length, 0)}</p>
             </div>
           </div>
 
-          <div className='rounded-md border border-neutral-800 bg-neutral-900 p-3'>
+          <div className='rounded-xl border border-neutral-800/80 bg-neutral-900/40 p-4'>
             <div className='flex items-center justify-between'>
               <div>
                 <p className='text-xs uppercase tracking-[0.2em] text-gray-500'>Upcoming</p>
                 <h3 className='text-sm font-semibold text-white'>Next tasks</h3>
               </div>
             </div>
-            <div className='mt-3 space-y-3'>
+            <div className='mt-4 space-y-3'>
               {upcomingTasks.length > 0 ? (
                 upcomingTasks.map((task) => (
                   <button
                     key={task._id}
                     type='button'
                     onClick={() => onEditTask(task)}
-                    className='cursor-pointer w-full rounded-md border border-neutral-800 bg-neutral-950 p-3 text-left text-sm text-gray-300 hover:border-brand-primary'
+                    className='cursor-pointer w-full rounded-lg border border-neutral-800/60 bg-neutral-950/50 p-3 text-left text-sm text-gray-300 hover:border-brand-primary transition'
                   >
                     <div className='flex items-center justify-between gap-2'>
                       <p className='font-semibold text-white'>{task.title}</p>
@@ -231,8 +234,8 @@ const Calendar = ({ tasks, onOpenModal, onEditTask }) => {
 
         </aside>
 
-        <main className='space-y-4'>
-          <section className='flex flex-col gap-4 rounded-md border border-neutral-800 bg-neutral-950 p-4'>
+        <main className='flex-1 space-y-4 min-w-0'>
+          <section className='flex flex-col gap-4 rounded-xl border border-neutral-800/50 bg-neutral-950/50 p-4 md:p-6'>
             <div className='flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between'>
               <div>
                 <p className='text-sm text-gray-400'>Current view</p>
@@ -248,104 +251,174 @@ const Calendar = ({ tasks, onOpenModal, onEditTask }) => {
               </div>
             </div>
 
-            <div className='rounded-md border border-neutral-800 bg-neutral-900 p-4'>
-              {viewMode === 'day' && (
-                <div className='space-y-4'>
-                  {currentDayTasks.length > 0 ? (
-                    currentDayTasks.map((task) => (
-                      <button
-                        key={task._id}
-                        type='button'
-                        onClick={() => onEditTask(task)}
-                        className='cursor-pointer w-full rounded-md border border-neutral-800 bg-neutral-950 p-3 text-left transition hover:border-brand-primary'
-                      >
-                        <div className='flex items-center justify-between gap-3'>
-                          <span className='font-semibold text-white'>{task.title}</span>
-                          <span className={`text-[11px] uppercase font-semibold ${getPriorityColor(task.priority)}`}>{task.priority}</span>
-                        </div>
-                        {task.description && <p className='mt-2 text-sm text-gray-400'>{task.description}</p>}
-                      </button>
-                    ))
-                  ) : (
-                    <button
-                      type='button'
-                      onClick={() => onOpenModal(null, getDateKey(currentDate))}
-                      className='rounded-md border border-dashed border-neutral-700 bg-neutral-950 p-6 text-center text-sm text-gray-400 w-full hover:border-brand-primary'
-                    >
-                      No tasks scheduled for this day. Click to add one.
-                    </button>
-                  )}
-                </div>
-              )}
+            <div className='rounded-xl border border-neutral-800/80 bg-neutral-900/40 p-2 md:p-4'>
+              
+              {/* DAY VIEW */}
+              {viewMode === 'day' && (() => {
+                const allDayTasks = currentDayTasks.filter(t => {
+                  const d = new Date(t.dueDate);
+                  return d.getHours() === 0 && d.getMinutes() === 0;
+                });
+                const scheduledTasks = currentDayTasks.filter(t => {
+                  const d = new Date(t.dueDate);
+                  return d.getHours() !== 0 || d.getMinutes() !== 0;
+                }).sort((a, b) => new Date(a.dueDate) - new Date(b.dueDate));
 
-              {viewMode === 'week' && (
-                <div className='grid gap-4 lg:grid-cols-2'>
-                  {weekBlocks.map((block) => (
-                    <div
-                      key={block.day.toString()}
-                      className='rounded-md border border-neutral-800 bg-neutral-950 p-4 cursor-pointer'
-                      onClick={() => onOpenModal(null, getDateKey(block.day))}
-                    >
-                      <div className='flex items-center justify-between'>
-                        <div>
-                          <p className='text-sm text-gray-400'>{block.day.toLocaleDateString('en-US', { weekday: 'short' })}</p>
-                          <p className='text-lg font-semibold text-white'>{block.day.getDate()}</p>
-                        </div>
-                        <span className='text-sm text-gray-400'>{block.tasks.length} tasks</span>
-                      </div>
-                      <div className='mt-4 space-y-2'>
-                        {block.tasks.length > 0 ? (
-                          block.tasks.slice(0, 2).map((task) => (
-                            <button
-                              key={task._id}
-                              type='button'
-                              onClick={(e) => { e.stopPropagation(); onEditTask(task) }}
-                              className='cursor-pointer w-full rounded-md border border-neutral-800 bg-neutral-900 p-3 text-left text-sm text-gray-300 hover:border-brand-primary'
-                            >
-                              <div className='flex items-center justify-between gap-2'>
-                                <p className='font-semibold text-white'>{task.title}</p>
-                                <span className={`text-[11px] uppercase font-semibold ${getPriorityColor(task.priority)}`}>{task.priority}</span>
-                              </div>
-                            </button>
-                          ))
-                        ) : (
-                          <p className='text-sm text-gray-400'>No tasks</p>
+                return (
+                  <div className='space-y-6 pt-2'>
+                    {currentDayTasks.length === 0 ? (
+                      <EmptyTaskState 
+                        title="A clear schedule!" 
+                        description="You have no tasks scheduled for this day." 
+                        onAdd={() => onOpenModal(null, getDateKey(currentDate))} 
+                      />
+                    ) : (
+                      <>
+                        {/* All Day Section */}
+                        {allDayTasks.length > 0 && (
+                          <div className="mb-6">
+                            <h4 className="text-[10px] font-bold text-gray-500 uppercase tracking-widest mb-3 px-1">All Day</h4>
+                            <div className="grid gap-2">
+                              {allDayTasks.map((task) => (
+                                <button
+                                  key={task._id}
+                                  type='button'
+                                  onClick={() => onEditTask(task)}
+                                  className='cursor-pointer w-full rounded-xl border border-neutral-800/60 bg-neutral-950 p-3 text-left transition hover:border-brand-primary shadow-sm'
+                                >
+                                  <div className='flex items-center justify-between gap-3'>
+                                    <span className='font-semibold text-gray-200'>{task.title}</span>
+                                    <span className={`text-[10px] uppercase tracking-wider font-bold ${getPriorityColor(task.priority)}`}>{task.priority}</span>
+                                  </div>
+                                </button>
+                              ))}
+                            </div>
+                          </div>
                         )}
+                        
+                        {/* Hourly Timeline Section */}
+                        {scheduledTasks.length > 0 && (
+                          <div>
+                            <h4 className="text-[10px] font-bold text-gray-500 uppercase tracking-widest mb-4 px-1">Timeline</h4>
+                            <div className="space-y-3">
+                              {scheduledTasks.map(task => {
+                                const d = new Date(task.dueDate);
+                                const timeString = d.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' });
+                                return (
+                                  <div key={task._id} className="flex gap-3 sm:gap-4 items-start">
+                                    <div className="w-16 shrink-0 text-right pt-3">
+                                      <span className="text-[11px] font-bold text-brand-primary">{timeString}</span>
+                                    </div>
+                                    <div className="flex-1">
+                                      <button
+                                        type='button'
+                                        onClick={() => onEditTask(task)}
+                                        className='cursor-pointer w-full rounded-xl border border-neutral-800/60 bg-neutral-950 p-3 text-left transition hover:border-brand-primary shadow-sm'
+                                      >
+                                        <div className='flex items-center justify-between gap-3'>
+                                          <span className='font-semibold text-gray-200'>{task.title}</span>
+                                          <span className={`text-[10px] uppercase tracking-wider font-bold ${getPriorityColor(task.priority)}`}>{task.priority}</span>
+                                        </div>
+                                        {task.description && <p className='mt-2 text-xs text-gray-500 truncate'>{task.description}</p>}
+                                      </button>
+                                    </div>
+                                  </div>
+                                );
+                              })}
+                            </div>
+                          </div>
+                        )}
+                      </>
+                    )}
+                  </div>
+                );
+              })()}
+
+              {/* WEEK VIEW */}
+              {viewMode === 'week' && (
+                <div className='flex flex-col gap-3'>
+                  {weekBlocks.map((block) => {
+                    const isToday = getDateKey(block.day) === getDateKey(new Date());
+                    return (
+                      <div
+                        key={block.day.toString()}
+                        className='rounded-xl border border-neutral-800/50 bg-neutral-950/50 p-4 cursor-pointer hover:border-neutral-600 transition-colors flex flex-col sm:flex-row gap-4 sm:items-center'
+                        onClick={() => onOpenModal(null, getDateKey(block.day))}
+                      >
+                        <div className='flex sm:flex-col items-center justify-between sm:justify-center sm:w-16 shrink-0'>
+                          <p className={`text-[10px] uppercase tracking-widest font-bold ${isToday ? 'text-brand-primary' : 'text-gray-500'}`}>{block.day.toLocaleDateString('en-US', { weekday: 'short' })}</p>
+                          <p className={`text-2xl font-black ${isToday ? 'text-brand-primary' : 'text-gray-200'}`}>{block.day.getDate()}</p>
+                        </div>
+                        <div className='flex-1 grid grid-cols-1 md:grid-cols-2 gap-2 border-t sm:border-t-0 sm:border-l border-neutral-800/60 pt-3 sm:pt-0 sm:pl-5'>
+                          {block.tasks.length > 0 ? (
+                            block.tasks.slice(0, 4).map((task) => (
+                              <button
+                                key={task._id}
+                                type='button'
+                                onClick={(e) => { e.stopPropagation(); onEditTask(task) }}
+                                className='cursor-pointer w-full rounded-lg border border-neutral-800/80 bg-neutral-800/30 px-3 py-2 text-left hover:bg-neutral-800 transition'
+                              >
+                                <div className='flex items-center justify-between gap-2'>
+                                  <p className='text-xs font-semibold text-gray-200 truncate'>{task.title}</p>
+                                  <span className={`text-[9px] uppercase font-bold ${getPriorityColor(task.priority)}`}>{task.priority}</span>
+                                </div>
+                              </button>
+                            ))
+                          ) : (
+                            <p className='text-xs text-gray-600 font-medium flex items-center h-full'>No tasks scheduled</p>
+                          )}
+                        </div>
                       </div>
-                    </div>
-                  ))}
+                    );
+                  })}
                 </div>
               )}
 
+              {/* MONTH VIEW */}
               {viewMode === 'month' && (
                 <div className='grid gap-2'>
-                  <div className='grid grid-cols-7 gap-2 text-center text-xs uppercase tracking-[0.2em] text-gray-500'>
+                  <div className='grid grid-cols-7 gap-2 text-center text-[10px] font-bold uppercase tracking-[0.2em] text-gray-500 mb-1'>
                     {['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'].map((label) => (
                       <span key={label}>{label}</span>
                     ))}
                   </div>
-                  <div className='grid gap-2 sm:grid-cols-7'>
+                  <div className='grid gap-1 sm:gap-2 grid-cols-7'>
                     {monthGrid.map((day, index) => {
-                      const tasksForDay = day ? tasksByDate[getDateKey(day)] || [] : [];
+                      const dayKey = day ? getDateKey(day) : null;
+                      const isToday = dayKey === getDateKey(new Date());
+                      const tasksForDay = day ? tasksByDate[dayKey] || [] : [];
+                      
                       return (
                         <div
                           key={index}
-                          className={`min-h-20 rounded-md border border-neutral-800 p-3 text-left cursor-pointer ${day && day.getMonth() === currentDate.getMonth() ? 'bg-neutral-950' : 'bg-neutral-900 text-gray-600'}`}
-                          onClick={() => day && onOpenModal(null, getDateKey(day))}
+                          className={`min-h-[80px] sm:min-h-[100px] rounded-xl border sm:p-2 text-left transition-all ${day ? 'cursor-pointer bg-neutral-900/30 border-neutral-800/60 hover:border-neutral-600' : 'border-transparent'}`}
+                          onClick={() => day && onOpenModal(null, dayKey)}
                         >
-                          {day ? (
-                            <>
-                              <div className='flex items-center justify-between text-sm text-white'>
-                                <span>{day.getDate()}</span>
-                                <span className='inline-flex h-2 w-2 rounded-md bg-brand-primary' />
-                              </div>
-                              {tasksForDay.length > 0 && (
-                                <div className='mt-3 rounded-md bg-brand-primary/10 px-2 py-1 text-[11px] font-medium text-white'>
-                                  {tasksForDay.length} task{tasksForDay.length > 1 ? 's' : ''}
+                          {day && (
+                            <div className="flex flex-col h-full p-1 sm:p-0">
+                              <div className='flex items-start justify-between mb-1.5'>
+                                <span className={`text-xs font-semibold ${isToday ? 'bg-brand-primary text-white w-5 h-5 flex items-center justify-center rounded-full shadow-md' : 'text-gray-400'}`}>
+                                  {day.getDate()}
+                                </span>
+                                <div className="flex flex-wrap justify-end gap-0.5 mt-0.5 max-w-[50%]">
+                                  {Array.from(new Set(tasksForDay.map(t => t.priority))).map(p => (
+                                     <span key={p} className={`h-1.5 w-1.5 rounded-full ${p === 'none' ? 'bg-neutral-600' : p === 'high' ? 'bg-red-400' : p === 'medium' ? 'bg-yellow-400' : 'bg-green-400'}`} />
+                                  ))}
                                 </div>
-                              )}
-                            </>
-                          ) : null}
+                              </div>
+                              
+                              <div className='space-y-1 flex-1 hidden sm:block'>
+                                {tasksForDay.slice(0, 2).map(t => (
+                                   <div key={t._id} className="truncate text-[9px] font-medium text-gray-300 bg-neutral-800/80 px-1.5 py-0.5 rounded border border-neutral-700/50">
+                                      {t.title}
+                                   </div>
+                                ))}
+                                {tasksForDay.length > 2 && (
+                                   <div className="text-[9px] text-gray-500 font-bold pl-0.5">+{tasksForDay.length - 2} more</div>
+                                )}
+                              </div>
+                            </div>
+                          )}
                         </div>
                       )
                     })}
