@@ -16,7 +16,7 @@ app.use(async (req, res, next) => {
         return next();
     }
     try {
-        await mongoose.connect(process.env.MONGO_URI || process.env.MONGODB_URI);
+        await mongoose.connect(process.env.MONGODB_URL || process.env.MONGO_URI);
         next();
     } catch (error) {
         console.error("Serverless DB Connection Error:", error);
