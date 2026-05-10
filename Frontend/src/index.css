@@ -6,9 +6,68 @@ body{
 
 @theme {
   --color-brand-bg: #121212;
-  --color-brand-primary: #38BDF8;
-  --color-brand-secondary: #2DD4BF;
+  --color-brand-primary: var(--app-primary, #38BDF8);
   --color-brand-surface: #1E1E1E;
 
   --font-poppins: Poppins, sans-serif;
 }
+
+/* --- FLAWLESS LIGHT MODE --- */
+/* By overriding Tailwind's internal v4 color variables, we keep all 
+   alpha opacities (e.g. hover:bg-white/10) working perfectly natively! */
+.light {
+  /* Brand Colors */
+  --color-brand-bg: #F8FAFC;       /* slate-50 */
+  --color-brand-surface: #FFFFFF;  /* white */
+  --color-brand-primary: var(--app-primary-light, #0284C7);
+  
+  /* Core Inversions */
+  --color-white: #0F172A;          /* Inverts text-white to slate-900 */
+  --color-black: #FFFFFF;          /* Inverts bg-black/50 overlays to white/50 */
+
+  /* Backgrounds & Borders */
+  --color-neutral-950: #FFFFFF;
+  --color-neutral-900: #F1F5F9;    /* slate-100 */
+  --color-neutral-800: #E2E8F0;    /* slate-200 */
+  --color-neutral-700: #CBD5E1;    /* slate-300 */
+  --color-neutral-600: #94A3B8;    /* slate-400 */
+
+  /* Typography & Accents */
+  --color-gray-200: #1E293B;       /* slate-800 */
+  --color-gray-300: #334155;       /* slate-700 */
+  --color-gray-400: #475569;       /* slate-600 */
+  --color-gray-500: #64748B;       /* slate-500 */
+  --color-gray-600: #94A3B8;       /* slate-400 */
+  --color-gray-700: #CBD5E1;       /* slate-300 */
+  
+  /* Status/Priority Colors (Darkened for readability) */
+  --color-red-300: #DC2626;        
+  --color-red-400: #B91C1C;        
+  --color-red-500: #991B1B;        
+  --color-yellow-300: #D97706;     
+  --color-yellow-400: #B45309;     
+  --color-yellow-500: #92400E;     
+  --color-green-300: #16A34A;      
+  --color-green-400: #15803D;      
+}
+
+.light body {
+  background-color: var(--color-brand-bg);
+  color: var(--color-gray-200);
+}
+
+/* Ensure text remains pure white on solid blue backgrounds in Light Mode */
+.light .bg-brand-primary,
+.light .bg-blue-500 {
+  --color-white: #FFFFFF;
+}
+
+/* --- THEME ACCENT COLORS --- */
+:root[data-color="blue"]    { --app-primary: #38BDF8; --app-primary-light: #0284C7; }
+:root[data-color="rose"]    { --app-primary: #FB7185; --app-primary-light: #E11D48; }
+:root[data-color="emerald"] { --app-primary: #4ADE80; --app-primary-light: #059669; }
+:root[data-color="violet"]  { --app-primary: #C084FC; --app-primary-light: #7C3AED; }
+:root[data-color="amber"]   { --app-primary: #FBBF24; --app-primary-light: #D97706; }
+:root[data-color="indigo"]  { --app-primary: #818CF8; --app-primary-light: #4F46E5; }
+:root[data-color="teal"]    { --app-primary: #2DD4BF; --app-primary-light: #0D9488; }
+:root[data-color="fuchsia"] { --app-primary: #E879F9; --app-primary-light: #C026D3; }

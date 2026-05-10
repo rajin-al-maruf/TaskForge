@@ -1,21 +1,34 @@
-import { useState, useContext } from 'react';
-import logo from '../assets/logo.png';
+import { useState, useContext, useRef, useEffect } from 'react';
 import { PiSidebarSimpleLight } from "react-icons/pi";
 import { RiTaskLine } from "react-icons/ri";
-import { FaRegCalendarAlt } from "react-icons/fa";
+import { FaRegCalendarAlt, FaChartLine, FaCog, FaUser, FaSignOutAlt, FaChevronDown, FaPaintBrush, FaFileExport, FaCreditCard } from "react-icons/fa";
 import { GrTarget } from "react-icons/gr";
 import { toast } from 'sonner';
 import CreateListModal from './CreateListModal.jsx';
 import { AuthContext } from '../api/AuthContext.jsx';
+import SettingsModal from './SettingsModal.jsx';
 
 
 const Sidebar = ({activeTab, setActiveTab, customLists = [], onCreateList, onDeleteList}) => {
   const [collapsed, setCollapsed] = useState(false);
   const [isListModalOpen, setIsListModalOpen] = useState(false);
+  const [isDropdownOpen, setIsDropdownOpen] = useState(false);
+  const [isSettingsModalOpen, setIsSettingsModalOpen] = useState(false);
+  const dropdownRef = useRef(null);
   
-  const { user } = useContext(AuthContext);
+  const { user, logout } = useContext(AuthContext);
   const isProUser = user?.userType === 'pro';
   const FREE_LIST_LIMIT = 3; // Free users can create up to 3 custom lists
+
+  useEffect(() => {
+    const handleClickOutside = (event) => {
+      if (dropdownRef.current && !dropdownRef.current.contains(event.target)) {
+        setIsDropdownOpen(false);
+      }
+    };
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, []);
 
   const handleTabClick = (tab) => {
     setActiveTab(tab);
@@ -23,6 +36,15 @@ const Sidebar = ({activeTab, setActiveTab, customLists = [], onCreateList, onDel
 
   const handleToggle = () => {
     setCollapsed((prev) => !prev);
+  };
+
+  const handleProFeatureClick = (featureName) => {
+    if (!isProUser) {
+      toast.info(`${featureName} is a PRO feature. Upgrade to unlock!`, { icon: '✨' });
+    } else {
+      toast.success(`Opening ${featureName}...`); // Placeholder for future modal/page
+    }
+    setIsDropdownOpen(false);
   };
 
   const tabItems = [
@@ -33,16 +55,79 @@ const Sidebar = ({activeTab, setActiveTab, customLists = [], onCreateList, onDel
 
   return (
     <div className={`sticky top-0 self-start h-screen bg-brand-surface p-4 text-gray-500 overflow-y-auto transition-all duration-300 flex flex-col ${collapsed ? 'w-16' : 'w-72'}`}>
-        <div className={`flex items-center mb-4 ${collapsed ? 'justify-center' : 'justify-between'}`}>
-          {!collapsed && <img src={logo} alt="taskforge_logo" className='w-44'/>
-          }
-          <button
-            onClick={handleToggle}
-            className='cursor-pointer hover:text-brand-primary hover:bg-neutral-800 p-1 rounded transition-colors'
-            aria-label={collapsed ? 'Open sidebar' : 'Collapse sidebar'}
-          >
-            <PiSidebarSimpleLight size={20} className={`transition-transform duration-300 ${collapsed ? 'rotate-180' : ''}`} />
-          </button>
+        {/* Header: Profile & Collapse */}
+        <div className={`flex ${collapsed ? 'flex-col gap-4 items-center' : 'items-center justify-between'} mb-8`}>
+          {/* Profile Section & Dropdown */}
+          <div className={`relative ${collapsed ? 'flex justify-center' : ''}`} ref={dropdownRef}>
+            <div 
+              className={`flex items-center gap-2 p-1.5 rounded-md bg-brand-surface border border-neutral-800 shadow-sm hover:bg-neutral-800 cursor-pointer transition-all ${collapsed ? 'justify-center' : 'pr-3'}`}
+              onClick={() => setIsDropdownOpen(!isDropdownOpen)}
+            >
+              <div className="h-8 w-8 rounded-full bg-brand-primary flex items-center justify-center text-white text-xs font-bold shadow-inner shrink-0 overflow-hidden">
+                {user?.profilePicture ? (
+                  <img src={user.profilePicture} alt="Avatar" className="w-full h-full object-cover" />
+                ) : (
+                  user?.firstName?.charAt(0) || 'U'
+                )}
+              </div>
+              
+              {!collapsed && (
+                <>
+                  <div className="flex flex-col overflow-hidden max-w-[110px]">
+                    <span className="text-gray-200 text-xs font-semibold truncate leading-tight">
+                      {user?.firstName}
+                    </span>
+                    <span className="text-brand-primary/80 text-[9px] font-bold uppercase tracking-wider mt-0.5 leading-none">
+                      {isProUser ? 'Pro Plan' : 'Free Plan'}
+                    </span>
+                  </div>
+                  <FaChevronDown 
+                    className={`text-gray-500 transition-transform duration-200 shrink-0 ml-1 ${isDropdownOpen ? 'rotate-180' : ''}`} 
+                    size={10} 
+                  />
+                </>
+              )}
+            </div>
+
+            {/* Popdown Menu */}
+            <div className={`absolute mt-2 w-64 ${collapsed ? 'top-0 left-full ml-2' : 'top-full left-0'} bg-brand-surface border border-neutral-700 rounded-xl shadow-2xl py-2 z-50 transition-all duration-200 origin-top-left ${isDropdownOpen ? 'opacity-100 scale-100' : 'opacity-0 scale-95 pointer-events-none'}`}>
+            <button onClick={() => handleProFeatureClick('Performance Analysis')} className="w-full flex items-center justify-between px-4 py-2.5 text-sm text-gray-300 hover:bg-neutral-800 hover:text-white transition-colors cursor-pointer">
+              <div className="flex items-center gap-3"><FaChartLine size={14} className="text-gray-400" /> Performance Analysis</div>
+              {!isProUser && <span className="text-[9px] font-bold bg-yellow-500/20 text-yellow-500 px-1.5 py-0.5 rounded uppercase tracking-wider">PRO</span>}
+            </button>
+            <button onClick={() => handleProFeatureClick('Workspace & Themes')} className="w-full flex items-center justify-between px-4 py-2.5 text-sm text-gray-300 hover:bg-neutral-800 hover:text-white transition-colors cursor-pointer">
+              <div className="flex items-center gap-3"><FaPaintBrush size={14} className="text-gray-400" /> Workspace & Themes</div>
+              {!isProUser && <span className="text-[9px] font-bold bg-yellow-500/20 text-yellow-500 px-1.5 py-0.5 rounded uppercase tracking-wider">PRO</span>}
+            </button>
+            <button onClick={() => handleProFeatureClick('Export Data')} className="w-full flex items-center justify-between px-4 py-2.5 text-sm text-gray-300 hover:bg-neutral-800 hover:text-white transition-colors cursor-pointer">
+              <div className="flex items-center gap-3"><FaFileExport size={14} className="text-gray-400" /> Export Data</div>
+              {!isProUser && <span className="text-[9px] font-bold bg-yellow-500/20 text-yellow-500 px-1.5 py-0.5 rounded uppercase tracking-wider">PRO</span>}
+            </button>
+            <button onClick={() => { setIsDropdownOpen(false); setIsSettingsModalOpen(true); }} className="w-full flex items-center gap-3 px-4 py-2.5 text-sm text-gray-300 hover:bg-neutral-800 hover:text-white transition-colors cursor-pointer">
+              <FaCog size={14} className="text-gray-400" /> Settings
+            </button>
+            <button onClick={() => { setIsDropdownOpen(false); toast.success('Opening Plan & Billing...'); }} className="w-full flex items-center gap-3 px-4 py-2.5 text-sm text-gray-300 hover:bg-neutral-800 hover:text-white transition-colors cursor-pointer">
+              <FaCreditCard size={14} className="text-gray-400" /> Plan & Billing
+            </button>
+            
+            <div className="h-px bg-neutral-800 my-1"></div>
+            
+            <button 
+              onClick={logout}
+              className="w-full flex items-center gap-3 px-4 py-2.5 text-sm text-red-400 hover:bg-neutral-800 hover:text-red-300 transition-colors cursor-pointer"
+            >
+              <FaSignOutAlt size={14} /> Logout
+            </button>
+          </div>
+        </div>
+
+        <button
+          onClick={handleToggle}
+          className='cursor-pointer text-gray-400 hover:text-brand-primary hover:bg-neutral-800 p-1.5 rounded-lg transition-colors shrink-0'
+          aria-label={collapsed ? 'Open sidebar' : 'Collapse sidebar'}
+        >
+          <PiSidebarSimpleLight size={20} className={`transition-transform duration-300 ${collapsed ? 'rotate-180' : ''}`} />
+        </button>
         </div>
 
         <div className='flex flex-col gap-2'>
@@ -130,6 +215,11 @@ const Sidebar = ({activeTab, setActiveTab, customLists = [], onCreateList, onDel
           isOpen={isListModalOpen} 
           onClose={() => setIsListModalOpen(false)} 
           onCreate={onCreateList} 
+        />
+
+        <SettingsModal 
+          isOpen={isSettingsModalOpen}
+          onClose={() => setIsSettingsModalOpen(false)}
         />
     </div>
   )

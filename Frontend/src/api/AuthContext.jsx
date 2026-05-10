@@ -8,14 +8,55 @@ export const AuthProvider = ({children}) => {
     
     // This state is ONLY for the initial app mount check
     const [initialLoad, setInitialLoad] = useState(true)
+    const [theme, setTheme] = useState(localStorage.getItem('theme') || 'system')
+    const [accentColor, setAccentColor] = useState(localStorage.getItem('accentColor') || 'blue')
 
     useEffect(() => {
         const token= localStorage.getItem('token')
+        const storedUser = localStorage.getItem('user')
         if(token){
-            setUser({ loggedIn: true })
+            if(storedUser) {
+                try { setUser(JSON.parse(storedUser)) } 
+                catch(e) { setUser({ loggedIn: true }) }
+            } else {
+                setUser({ loggedIn: true })
+            }
         }
         setInitialLoad(false)
     },[])
+
+    // Global Theme Effect
+    useEffect(() => {
+        const root = document.documentElement;
+        const applyTheme = () => {
+            const isSystemDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
+            const isDark = theme === 'dark' || (theme === 'system' && isSystemDark);
+            
+            root.classList.toggle('dark', isDark);
+            root.classList.toggle('light', !isDark);
+            
+            if (theme === 'system') localStorage.removeItem('theme');
+            else localStorage.setItem('theme', theme);
+        };
+
+        applyTheme();
+
+        // Listen for OS system theme changes in real-time
+        const mediaQuery = window.matchMedia('(prefers-color-scheme: dark)');
+        const handleChange = () => { if (theme === 'system') applyTheme(); };
+        mediaQuery.addEventListener('change', handleChange);
+        return () => mediaQuery.removeEventListener('change', handleChange);
+    }, [theme]);
+
+    // Global Accent Color Effect
+    useEffect(() => {
+        if (user && user.userType !== 'pro' && accentColor !== 'blue') {
+            setAccentColor('blue');
+        } else {
+            document.documentElement.setAttribute('data-color', accentColor);
+            localStorage.setItem('accentColor', accentColor);
+        }
+    }, [accentColor, user]);
 
     const register = async (credential) => {
         try {
@@ -23,6 +64,7 @@ export const AuthProvider = ({children}) => {
 
             if(data.token){
                 localStorage.setItem("token", data.token)
+                if(data.user) localStorage.setItem("user", JSON.stringify(data.user))
                 setUser(data.user || { loggedIn: true })
             }
             return data;
@@ -37,6 +79,7 @@ export const AuthProvider = ({children}) => {
 
             if(data.token){
                 localStorage.setItem("token", data.token)
+                if(data.user) localStorage.setItem("user", JSON.stringify(data.user))
                 setUser(data.user || { loggedIn: true })
             }
             return data;
@@ -48,6 +91,7 @@ export const AuthProvider = ({children}) => {
 
     const logout = async () => {
         localStorage.removeItem("token")
+        localStorage.removeItem("user")
         setUser(null)
     }
 
@@ -58,7 +102,12 @@ export const AuthProvider = ({children}) => {
             setLoading: () => {}, // Dummy function to prevent Router unmounting!
             register, 
             login, 
-            logout
+            logout,
+            setUser,
+            theme,
+            setTheme,
+            accentColor,
+            setAccentColor
         }}>
             {children}
         </AuthContext.Provider>

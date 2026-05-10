@@ -51,13 +51,13 @@ const updateTask = async (req, res) => {
         }
 
         const taskId = req.params.id
-        const task = await Task.findById(taskId)
-        if(!task) return res.status(404).json({success: false, message: "Task not found"})
-        if(task.owner.toString() !== req.user._id.toString()){
-            return res.status(403).json({success: false, message: "Forbidden: You do not own this task"})
-        }
+        const updatedTask = await Task.findOneAndUpdate(
+            { _id: taskId, owner: req.user._id },
+            req.body,
+            { new: true, runValidators: true }
+        )
+        if(!updatedTask) return res.status(404).json({success: false, message: "Task not found or forbidden"})
 
-        const updatedTask = await Task.findByIdAndUpdate(taskId, req.body, {new: true, runValidators: true})
         res.status(200).json({ success: true, message: "Task updated successfully!" , updatedTask})
     } catch (error) {
         res.status(500).json({ success: false, message: "Internal server error" })
@@ -67,14 +67,10 @@ const updateTask = async (req, res) => {
 const deleteTask = async (req, res) => {
     try {
         const taskId = req.params.id
-        const task = await Task.findById(taskId)
-        if(!task) return res.status(404).json({success: false, message: "Task not found"})
-        if(task.owner.toString() !== req.user._id.toString()){
-            return res.status(403).json({success: false, message: "Forbidden: You do not own this task"})
-        }
+        const deletedTask = await Task.findOneAndDelete({ _id: taskId, owner: req.user._id })
+        if(!deletedTask) return res.status(404).json({success: false, message: "Task not found or forbidden"})
 
-        const deleteTask = await Task.findByIdAndDelete(taskId)
-        res.status(200).json({ success: true, message: "Task deleted", deleteTask })
+        res.status(200).json({ success: true, message: "Task deleted", deletedTask })
     } catch (error) {
         res.status(500).json({ success: false, message: "Internal server error" })
     }

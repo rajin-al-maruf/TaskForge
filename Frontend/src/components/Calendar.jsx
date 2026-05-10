@@ -153,7 +153,7 @@ const Calendar = ({ tasks, onOpenModal, onEditTask }) => {
         </div>
 
         <div className='flex flex-col gap-3 sm:flex-row sm:items-center'>
-          <div className='inline-flex overflow-hidden rounded-md border border-neutral-800 bg-neutral-900 text-sm font-medium'>
+          <div className='inline-flex overflow-hidden rounded-md border border-neutral-800 bg-brand-bg text-sm font-medium'>
             {views.map((view) => (
               <button
                 key={view}
@@ -168,7 +168,7 @@ const Calendar = ({ tasks, onOpenModal, onEditTask }) => {
           <button
             type='button'
             onClick={handleToday}
-            className='cursor-pointer inline-flex items-center gap-2 rounded-md border border-neutral-800 bg-neutral-900 px-4 py-2 text-sm text-gray-300 hover:border-brand-primary hover:text-white transition'
+            className='cursor-pointer inline-flex items-center gap-2 rounded-md border border-neutral-800 bg-brand-bg px-4 py-2 text-sm text-gray-300 hover:border-brand-primary hover:text-white transition'
           >
             <FaRegCalendarCheck /> Today
           </button>
@@ -183,7 +183,7 @@ const Calendar = ({ tasks, onOpenModal, onEditTask }) => {
       </header>
 
       <div className='flex flex-col-reverse xl:flex-row gap-6'>
-        <aside className='w-full xl:w-[300px] shrink-0 space-y-4 rounded-xl border border-neutral-800/50 bg-neutral-950/50 p-5'>
+        <aside className='w-full xl:w-[300px] shrink-0 space-y-4 rounded-xl border border-neutral-800 bg-brand-surface p-5'>
           <div className='flex items-center justify-between'>
             <div>
               <p className='text-xs uppercase tracking-[0.3em] text-gray-500'>Overview</p>
@@ -193,17 +193,17 @@ const Calendar = ({ tasks, onOpenModal, onEditTask }) => {
           </div>
 
           <div className='grid gap-3'>
-            <div className='rounded-xl border border-neutral-800/80 bg-neutral-900/40 p-4'>
+            <div className='rounded-xl border border-neutral-800 bg-brand-bg p-4'>
               <p className='text-xs uppercase tracking-[0.2em] text-gray-500'>Tasks today</p>
               <p className='mt-2 text-2xl font-semibold text-white'>{(tasksByDate[getDateKey(new Date())] || []).length}</p>
             </div>
-            <div className='rounded-xl border border-neutral-800/80 bg-neutral-900/40 p-4'>
+            <div className='rounded-xl border border-neutral-800 bg-brand-bg p-4'>
               <p className='text-xs uppercase tracking-[0.2em] text-gray-500'>This week</p>
               <p className='mt-2 text-2xl font-semibold text-white'>{weekBlocks.reduce((sum, block) => sum + block.tasks.length, 0)}</p>
             </div>
           </div>
 
-          <div className='rounded-xl border border-neutral-800/80 bg-neutral-900/40 p-4'>
+          <div className='rounded-xl border border-neutral-800 bg-brand-bg p-4'>
             <div className='flex items-center justify-between'>
               <div>
                 <p className='text-xs uppercase tracking-[0.2em] text-gray-500'>Upcoming</p>
@@ -217,7 +217,7 @@ const Calendar = ({ tasks, onOpenModal, onEditTask }) => {
                     key={task._id}
                     type='button'
                     onClick={() => onEditTask(task)}
-                    className='cursor-pointer w-full rounded-lg border border-neutral-800/60 bg-neutral-950/50 p-3 text-left text-sm text-gray-300 hover:border-brand-primary transition'
+                    className='cursor-pointer w-full rounded-lg border border-neutral-800 bg-brand-surface p-3 text-left text-sm text-gray-300 hover:border-brand-primary transition'
                   >
                     <div className='flex items-center justify-between gap-2'>
                       <p className='font-semibold text-white'>{task.title}</p>
@@ -235,13 +235,13 @@ const Calendar = ({ tasks, onOpenModal, onEditTask }) => {
         </aside>
 
         <main className='flex-1 space-y-4 min-w-0'>
-          <section className='flex flex-col gap-4 rounded-xl border border-neutral-800/50 bg-neutral-950/50 p-4 md:p-6'>
+          <section className='flex flex-col gap-4 rounded-xl border border-neutral-800 bg-brand-surface p-4 md:p-6'>
             <div className='flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between'>
               <div>
                 <p className='text-sm text-gray-400'>Current view</p>
                 <h3 className='text-xl font-semibold text-white'>{viewMode === 'day' ? formatDisplayDate(currentDate) : viewMode === 'week' ? `${formatDisplayDate(weekDays[0])} — ${formatDisplayDate(weekDays[6])}` : formatMonthYear(currentDate)}</h3>
               </div>
-              <div className='inline-flex items-center gap-2 rounded-md border border-neutral-800 bg-neutral-900 p-2'>
+              <div className='inline-flex items-center gap-2 rounded-md border border-neutral-800 bg-brand-bg p-2'>
                 <button type='button' onClick={handlePrevious} className='cursor-pointer rounded-md p-2 text-gray-400 transition hover:bg-neutral-800 hover:text-white'>
                   <FaChevronLeft />
                 </button>
@@ -251,7 +251,7 @@ const Calendar = ({ tasks, onOpenModal, onEditTask }) => {
               </div>
             </div>
 
-            <div className='rounded-xl border border-neutral-800/80 bg-neutral-900/40 p-2 md:p-4'>
+            <div className='rounded-xl border border-neutral-800 bg-brand-bg p-2 md:p-4'>
               
               {/* DAY VIEW */}
               {viewMode === 'day' && (() => {
@@ -284,7 +284,7 @@ const Calendar = ({ tasks, onOpenModal, onEditTask }) => {
                                   key={task._id}
                                   type='button'
                                   onClick={() => onEditTask(task)}
-                                  className='cursor-pointer w-full rounded-xl border border-neutral-800/60 bg-neutral-950 p-3 text-left transition hover:border-brand-primary shadow-sm'
+                                className='cursor-pointer w-full rounded-xl border border-neutral-800 bg-brand-surface p-3 text-left transition hover:border-brand-primary shadow-sm'
                                 >
                                   <div className='flex items-center justify-between gap-3'>
                                     <span className='font-semibold text-gray-200'>{task.title}</span>
@@ -313,7 +313,7 @@ const Calendar = ({ tasks, onOpenModal, onEditTask }) => {
                                       <button
                                         type='button'
                                         onClick={() => onEditTask(task)}
-                                        className='cursor-pointer w-full rounded-xl border border-neutral-800/60 bg-neutral-950 p-3 text-left transition hover:border-brand-primary shadow-sm'
+                                      className='cursor-pointer w-full rounded-xl border border-neutral-800 bg-brand-surface p-3 text-left transition hover:border-brand-primary shadow-sm'
                                       >
                                         <div className='flex items-center justify-between gap-3'>
                                           <span className='font-semibold text-gray-200'>{task.title}</span>
@@ -342,21 +342,21 @@ const Calendar = ({ tasks, onOpenModal, onEditTask }) => {
                     return (
                       <div
                         key={block.day.toString()}
-                        className='rounded-xl border border-neutral-800/50 bg-neutral-950/50 p-4 cursor-pointer hover:border-neutral-600 transition-colors flex flex-col sm:flex-row gap-4 sm:items-center'
+                        className='rounded-xl border border-neutral-800 bg-brand-bg p-4 cursor-pointer hover:border-neutral-700 transition-colors flex flex-col sm:flex-row gap-4 sm:items-center'
                         onClick={() => onOpenModal(null, getDateKey(block.day))}
                       >
                         <div className='flex sm:flex-col items-center justify-between sm:justify-center sm:w-16 shrink-0'>
                           <p className={`text-[10px] uppercase tracking-widest font-bold ${isToday ? 'text-brand-primary' : 'text-gray-500'}`}>{block.day.toLocaleDateString('en-US', { weekday: 'short' })}</p>
                           <p className={`text-2xl font-black ${isToday ? 'text-brand-primary' : 'text-gray-200'}`}>{block.day.getDate()}</p>
                         </div>
-                        <div className='flex-1 grid grid-cols-1 md:grid-cols-2 gap-2 border-t sm:border-t-0 sm:border-l border-neutral-800/60 pt-3 sm:pt-0 sm:pl-5'>
+                        <div className='flex-1 grid grid-cols-1 md:grid-cols-2 gap-2 border-t sm:border-t-0 sm:border-l border-neutral-800 pt-3 sm:pt-0 sm:pl-5'>
                           {block.tasks.length > 0 ? (
                             block.tasks.slice(0, 4).map((task) => (
                               <button
                                 key={task._id}
                                 type='button'
                                 onClick={(e) => { e.stopPropagation(); onEditTask(task) }}
-                                className='cursor-pointer w-full rounded-lg border border-neutral-800/80 bg-neutral-800/30 px-3 py-2 text-left hover:bg-neutral-800 transition'
+                                className='cursor-pointer w-full rounded-lg border border-neutral-800 bg-brand-surface px-3 py-2 text-left hover:bg-neutral-800 transition'
                               >
                                 <div className='flex items-center justify-between gap-2'>
                                   <p className='text-xs font-semibold text-gray-200 truncate'>{task.title}</p>
@@ -391,7 +391,7 @@ const Calendar = ({ tasks, onOpenModal, onEditTask }) => {
                       return (
                         <div
                           key={index}
-                          className={`min-h-[80px] sm:min-h-[100px] rounded-xl border sm:p-2 text-left transition-all ${day ? 'cursor-pointer bg-neutral-900/30 border-neutral-800/60 hover:border-neutral-600' : 'border-transparent'}`}
+                          className={`min-h-[80px] sm:min-h-[100px] rounded-xl border sm:p-2 text-left transition-all ${day ? 'cursor-pointer bg-brand-bg border-neutral-800 hover:border-neutral-700' : 'border-transparent'}`}
                           onClick={() => day && onOpenModal(null, dayKey)}
                         >
                           {day && (
@@ -409,7 +409,7 @@ const Calendar = ({ tasks, onOpenModal, onEditTask }) => {
                               
                               <div className='space-y-1 flex-1 hidden sm:block'>
                                 {tasksForDay.slice(0, 2).map(t => (
-                                   <div key={t._id} className="truncate text-[9px] font-medium text-gray-300 bg-neutral-800/80 px-1.5 py-0.5 rounded border border-neutral-700/50">
+                                   <div key={t._id} className="truncate text-[9px] font-medium text-gray-300 bg-brand-surface px-1.5 py-0.5 rounded border border-neutral-700">
                                       {t.title}
                                    </div>
                                 ))}

@@ -25,16 +25,17 @@ const TodayTasks = ({
 }) => {
   const [isFocusMode, setIsFocusMode] = useState(false);
   const { user } = useContext(AuthContext);
-  const todayKey = useMemo(() => toLocalISODate(new Date()), [])
 
   const todayTasks = useMemo(
-    () =>
-      tasks.filter((task) => {
+    () => {
+      const todayKey = toLocalISODate(new Date());
+      return tasks.filter((task) => {
         if (!task.dueDate) return false
         const taskDate = new Date(task.dueDate);
         return toLocalISODate(taskDate) === todayKey;
-      }),
-    [tasks, todayKey]
+      });
+    },
+    [tasks]
   )
 
   const isProUser = user?.userType === 'pro';

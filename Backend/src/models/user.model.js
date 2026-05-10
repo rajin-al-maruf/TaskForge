@@ -23,12 +23,17 @@ const userSchema = new Schema(
             unique: true,
             lowercase: true,
             trim: true,
+            match: [/^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/, 'Please enter a valid email address']
         },
         password: {
             type: String,
             required: true,
             minLength: 6,
             maxLength: 100
+        },
+        profilePicture: {
+            type: String,
+            default: ""
         },
         userType: {
             type: String,

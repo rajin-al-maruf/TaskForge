@@ -9,6 +9,11 @@ const registerUser = async (req, res) => {
             return res.status(400).json({ success: false, message: "All fields are required." })
         }
 
+        const emailRegex = /^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/;
+        if (!emailRegex.test(email)) {
+            return res.status(400).json({ success: false, message: "Invalid email format." })
+        }
+
         const userExist = await User.findOne({email})
         if (userExist) {
             return res.status(400).json({ success: false, message: "User already exist." })
@@ -27,7 +32,7 @@ const registerUser = async (req, res) => {
             success: true,
             token,
             message: "User registered successfully!!",
-            user: {id: user._id, firstName: user.firstName, lastName: user.lastName, email: user.email,  userType: user.userType}
+            user: {id: user._id, firstName: user.firstName, lastName: user.lastName, email: user.email, userType: user.userType, profilePicture: user.profilePicture}
         })
     } catch (error) {
         console.error("registerUser error", error);
@@ -61,7 +66,7 @@ const loginUser = async (req, res) => {
             success: true,
             message: "User login successfull!!",
             token,
-            user: {id: user._id, firstName: user.firstName, lastName: user.lastName, email: user.email,  userType: user.userType}
+            user: {id: user._id, firstName: user.firstName, lastName: user.lastName, email: user.email, userType: user.userType, profilePicture: user.profilePicture}
         })
     } catch (error) {
         console.error("loginUser error", error);
@@ -69,4 +74,88 @@ const loginUser = async (req, res) => {
     }
 }
 
-export {registerUser, loginUser}
+const updateProfile = async (req, res) => {
+    try {
+        // Extract user ID from token
+        const token = req.headers.authorization?.split(" ")[1];
+        if (!token) return res.status(401).json({ success: false, message: "Unauthorized" });
+        const decoded = jwt.verify(token, process.env.JWT_SECRET);
+        
+        const { firstName, lastName, email, profilePicture } = req.body;
+        
+        // Validate email if it's being updated
+        if (email) {
+            const emailRegex = /^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/;
+            if (!emailRegex.test(email)) {
+                return res.status(400).json({ success: false, message: "Invalid email format" });
+            }
+            // Check if email is already in use by another user
+            const existingUser = await User.findOne({ email, _id: { $ne: decoded.id } });
+            if (existingUser) {
+                return res.status(400).json({ success: false, message: "Email is already in use by another account" });
+            }
+        }
+
+        // Find user and update their details
+        const updatedUser = await User.findByIdAndUpdate(
+            decoded.id,
+            { firstName, lastName, email, profilePicture },
+            { new: true, runValidators: true }
+        ).select('-password'); 
+        
+        if (!updatedUser) return res.status(404).json({ success: false, message: "User not found" });
+        
+        res.status(200).json({ success: true, message: "Profile updated", user: updatedUser });
+    } catch (error) {
+        console.error("Update profile error:", error);
+        res.status(500).json({ success: false, message: "Internal server error" });
+    }
+};
+
+const deleteAccount = async (req, res) => {
+    try {
+        const token = req.headers.authorization?.split(" ")[1];
+        if (!token) return res.status(401).json({ success: false, message: "Unauthorized" });
+        const decoded = jwt.verify(token, process.env.JWT_SECRET);
+        
+        const deletedUser = await User.findByIdAndDelete(decoded.id);
+        if (!deletedUser) return res.status(404).json({ success: false, message: "User not found" });
+        
+        res.status(200).json({ success: true, message: "Account successfully deleted" });
+    } catch (error) {
+        console.error("Delete account error:", error);
+        res.status(500).json({ success: false, message: "Internal server error" });
+    }
+};
+
+const updatePassword = async (req, res) => {
+    try {
+        const token = req.headers.authorization?.split(" ")[1];
+        if (!token) return res.status(401).json({ success: false, message: "Unauthorized" });
+        const decoded = jwt.verify(token, process.env.JWT_SECRET);
+        
+        const { currentPassword, newPassword } = req.body;
+        if (!currentPassword || !newPassword) {
+            return res.status(400).json({ success: false, message: "Both current and new passwords are required" });
+        }
+        if (newPassword.length < 6) {
+            return res.status(400).json({ success: false, message: "New password must be at least 6 characters" });
+        }
+
+        const user = await User.findById(decoded.id);
+        if (!user) return res.status(404).json({ success: false, message: "User not found" });
+
+        const isMatch = await user.comparePassword(currentPassword);
+        if (!isMatch) return res.status(400).json({ success: false, message: "Incorrect current password" });
+
+        user.password = newPassword;
+        await user.save(); // This automatically hashes the new password due to your pre-save hook
+
+        res.status(200).json({ success: true, message: "Password updated successfully" });
+    } catch (error) {
+        console.error("Update password error:", error);
+        res.status(500).json({ success: false, message: "Internal server error" });
+    }
+};
+
+export {registerUser, loginUser, updateProfile, deleteAccount, updatePassword}
