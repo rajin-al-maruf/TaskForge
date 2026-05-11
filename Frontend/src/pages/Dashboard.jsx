@@ -7,6 +7,7 @@ import Calendar from '../components/Calendar.jsx'
 import ListTasks from '../components/ListTasks.jsx'
 import TaskModal from '../components/TaskModal.jsx'
 import { createList, deleteList } from '../api/listApi.js'
+import PerformanceAnalysis from '../components/PerformanceAnalysis.jsx'
 import { useTasks, organizeTasks, priorityOrder } from '../hooks/useTasks.js'
 
 const Dashboard = () => {
@@ -104,6 +105,7 @@ const Dashboard = () => {
 
   const displayTasks = useMemo(() => {
     let result = tasks.filter(task => {
+      if (task.isArchived) return false;
       if (filters.priority !== 'all' && task.priority !== filters.priority) return false;
       if (filters.status !== 'all' && task.status !== filters.status) return false;
       if (activeTab === 'tasks' || activeTab === 'today' || activeTab === 'calendar') {
@@ -139,7 +141,7 @@ const Dashboard = () => {
   }
 
   return (
-    <div className='bg-brand-bg min-h-screen flex'>
+    <div className='bg-brand-bg h-screen flex overflow-hidden'>
       <Sidebar 
         activeTab={activeTab} 
         setActiveTab={setActiveTab}
@@ -147,7 +149,7 @@ const Dashboard = () => {
         onCreateList={handleCreateList}
         onDeleteList={handleDeleteList}
       />
-      <div className='flex-1 p-4'>
+      <div className='flex-1 p-4 overflow-y-auto'>
         {activeTab === 'tasks' && (
           <MyTasks
             title='My Tasks'
@@ -157,7 +159,9 @@ const Dashboard = () => {
           />
         )}
 
-        {activeTab !== 'tasks' && activeTab !== 'today' && activeTab !== 'calendar' && (
+        {activeTab === 'performance' && <PerformanceAnalysis tasks={tasks} />}
+
+        {activeTab !== 'tasks' && activeTab !== 'today' && activeTab !== 'calendar' && activeTab !== 'performance' && (
           <ListTasks
             listName={activeTab}
             tasks={displayTasks.filter(t => t.list === activeTab)}

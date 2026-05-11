@@ -34,6 +34,9 @@ const taskSchema = new Schema(
             type: String,
             enum: ['in-progress', 'completed']
         },
+        completedAt: { type: Date },
+        isArchived: { type: Boolean, default: false },
+        archivedAt: { type: Date, default: null },
         owner: {
             type: mongoose.Schema.Types.ObjectId,
             ref: 'User',
@@ -44,6 +47,9 @@ const taskSchema = new Schema(
         timestamps: true
     }
 )
+
+// Automatically permanently delete archived tasks after 30 days (2592000 seconds)
+taskSchema.index({ archivedAt: 1 }, { expireAfterSeconds: 2592000 });
 
 const Task = mongoose.model('Task', taskSchema)
 export default Task;

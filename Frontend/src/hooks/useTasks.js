@@ -72,6 +72,24 @@ export const useTasks = () => {
   };
 
   const removeTask = async (taskId) => {
+    const taskToDelete = tasks.find(t => t._id === taskId);
+    
+    // Soft Delete: If the task is completed, we ARCHIVE it instead of permanently deleting it
+    if (taskToDelete && taskToDelete.status === 'completed') {
+      try {
+        const response = await updateTask(taskId, { isArchived: true, archivedAt: new Date().toISOString() });
+        if (response.success) {
+          setTasks((prev) => prev.map((task) => task._id === taskId ? { ...task, isArchived: true } : task));
+          toast.success('Task archived and kept for analysis');
+        } else {
+          toast.error(response.message || 'Unable to archive task');
+        }
+      } catch (error) {
+        toast.error('Could not archive task');
+      }
+      return;
+    }
+
     try {
       const response = await deleteTask(taskId);
       if (response.success) {
@@ -90,10 +108,14 @@ export const useTasks = () => {
 
   const toggleTaskComplete = async (task) => {
     const nextStatus = task.status === 'completed' ? 'in-progress' : 'completed';
+    const updatePayload = { status: nextStatus };
+    if (nextStatus === 'completed') {
+      updatePayload.completedAt = new Date().toISOString();
+    }
     try {
-      const response = await updateTask(task._id, { status: nextStatus });
+      const response = await updateTask(task._id, updatePayload);
       if (response.success) {
-        setTasks((prev) => organizeTasks(prev.map((item) => item._id === task._id ? { ...item, status: nextStatus } : item)));
+        setTasks((prev) => organizeTasks(prev.map((item) => item._id === task._id ? { ...item, ...response.updatedTask } : item)));
         toast.success(`Task marked as ${nextStatus}`);
       } else {
         setFetchError(response.message || 'Unable to update task status');

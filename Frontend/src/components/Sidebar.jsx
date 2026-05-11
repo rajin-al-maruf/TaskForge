@@ -38,11 +38,12 @@ const Sidebar = ({activeTab, setActiveTab, customLists = [], onCreateList, onDel
     setCollapsed((prev) => !prev);
   };
 
-  const handleProFeatureClick = (featureName) => {
+  const handleProFeatureClick = (featureName, tabId) => {
     if (!isProUser) {
       toast.info(`${featureName} is a PRO feature. Upgrade to unlock!`, { icon: '✨' });
     } else {
-      toast.success(`Opening ${featureName}...`); // Placeholder for future modal/page
+      if (tabId) setActiveTab(tabId);
+      else toast.success(`Opening ${featureName}...`);
     }
     setIsDropdownOpen(false);
   };
@@ -91,7 +92,7 @@ const Sidebar = ({activeTab, setActiveTab, customLists = [], onCreateList, onDel
 
             {/* Popdown Menu */}
             <div className={`absolute mt-2 w-64 ${collapsed ? 'top-0 left-full ml-2' : 'top-full left-0'} bg-brand-surface border border-neutral-700 rounded-xl shadow-2xl py-2 z-50 transition-all duration-200 origin-top-left ${isDropdownOpen ? 'opacity-100 scale-100' : 'opacity-0 scale-95 pointer-events-none'}`}>
-            <button onClick={() => handleProFeatureClick('Performance Analysis')} className="w-full flex items-center justify-between px-4 py-2.5 text-sm text-gray-300 hover:bg-neutral-800 hover:text-white transition-colors cursor-pointer">
+            <button onClick={() => handleProFeatureClick('Performance Analysis', 'performance')} className="w-full flex items-center justify-between px-4 py-2.5 text-sm text-gray-300 hover:bg-neutral-800 hover:text-white transition-colors cursor-pointer">
               <div className="flex items-center gap-3"><FaChartLine size={14} className="text-gray-400" /> Performance Analysis</div>
               {!isProUser && <span className="text-[9px] font-bold bg-yellow-500/20 text-yellow-500 px-1.5 py-0.5 rounded uppercase tracking-wider">PRO</span>}
             </button>
