@@ -1,4 +1,4 @@
-import React, { useMemo, useState } from 'react';
+import React, { useMemo, useState, useContext } from 'react';
 import {
   FaChevronLeft,
   FaChevronRight,
@@ -6,6 +6,7 @@ import {
   FaRegCalendarCheck
 } from 'react-icons/fa';
 import EmptyTaskState from './EmptyTaskState.jsx';
+import { AuthContext } from '../api/AuthContext.jsx';
 
 const views = ['day', 'week', 'month'];
 
@@ -35,25 +36,38 @@ const addMonths = (date, amount) => {
 
 const addWeeks = (date, amount) => addDays(date, amount * 7);
 
-const startOfWeek = (date) => {
+const getStartDayIndex = (startPref) => {
+  const index = ['sunday', 'monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday'].indexOf(startPref);
+  return index !== -1 ? index : 0;
+};
+
+const getDayLabels = (startPref) => {
+  const days = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
+  const index = getStartDayIndex(startPref);
+  return [...days.slice(index), ...days.slice(0, index)];
+};
+
+const startOfWeekDate = (date, startPref = 'sunday') => {
   const start = new Date(date);
   const day = start.getDay();
-  const diff = (day + 6) % 7;
+  const startPrefIndex = getStartDayIndex(startPref);
+  const diff = (day - startPrefIndex + 7) % 7;
   start.setDate(start.getDate() - diff);
   return start;
 };
 
-const getWeekDays = (date) => {
-  const start = startOfWeek(date);
+const getWeekDays = (date, startPref) => {
+  const start = startOfWeekDate(date, startPref);
   return Array.from({ length: 7 }).map((_, index) => addDays(start, index));
 };
 
-const getMonthGrid = (date) => {
+const getMonthGrid = (date, startPref) => {
   const start = new Date(date.getFullYear(), date.getMonth(), 1);
   const end = new Date(date.getFullYear(), date.getMonth() + 1, 0);
-  const startDay = (start.getDay() + 6) % 7;
+  const startPrefIndex = getStartDayIndex(startPref);
+  const startDayOffset = (start.getDay() - startPrefIndex + 7) % 7;
   const days = [];
-  for (let i = 0; i < startDay; i += 1) {
+  for (let i = 0; i < startDayOffset; i += 1) {
     days.push(null);
   }
   for (let day = 1; day <= end.getDate(); day += 1) {
@@ -90,11 +104,15 @@ const getPriorityColor = (priority) => {
 };
 
 const Calendar = ({ tasks, onOpenModal, onEditTask }) => {
+  const { user } = useContext(AuthContext);
+  const startPref = user?.preferences?.startOfWeek || 'sunday';
+  const timePref = user?.preferences?.timeFormat || '12h';
+
   const [viewMode, setViewMode] = useState('week');
   const [currentDate, setCurrentDate] = useState(new Date());
 
-  const weekDays = useMemo(() => getWeekDays(currentDate), [currentDate]);
-  const monthGrid = useMemo(() => getMonthGrid(currentDate), [currentDate]);
+  const weekDays = useMemo(() => getWeekDays(currentDate, startPref), [currentDate, startPref]);
+  const monthGrid = useMemo(() => getMonthGrid(currentDate, startPref), [currentDate, startPref]);
 
   const activeTasks = useMemo(() => tasks.filter((task) => task.status !== 'completed'), [tasks]);
 
@@ -303,7 +321,11 @@ const Calendar = ({ tasks, onOpenModal, onEditTask }) => {
                             <div className="space-y-3">
                               {scheduledTasks.map(task => {
                                 const d = new Date(task.dueDate);
-                                const timeString = d.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' });
+                                const timeString = d.toLocaleTimeString('en-US', { 
+                                  hour: timePref === '24h' ? '2-digit' : 'numeric', 
+                                  minute: '2-digit',
+                                  hour12: timePref !== '24h'
+                                });
                                 return (
                                   <div key={task._id} className="flex gap-3 sm:gap-4 items-start">
                                     <div className="w-16 shrink-0 text-right pt-3">
@@ -378,7 +400,7 @@ const Calendar = ({ tasks, onOpenModal, onEditTask }) => {
               {viewMode === 'month' && (
                 <div className='grid gap-2'>
                   <div className='grid grid-cols-7 gap-2 text-center text-[10px] font-bold uppercase tracking-[0.2em] text-gray-500 mb-1'>
-                    {['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'].map((label) => (
+                    {getDayLabels(startPref).map((label) => (
                       <span key={label}>{label}</span>
                     ))}
                   </div>

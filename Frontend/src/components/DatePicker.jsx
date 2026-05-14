@@ -1,4 +1,5 @@
-import React, { useState } from 'react';
+import React, { useState, useContext } from 'react';
+import { AuthContext } from '../api/AuthContext.jsx';
 
 const padDate = (value) => String(value).padStart(2, '0');
 const toLocalISODate = (date) => `${date.getFullYear()}-${padDate(date.getMonth() + 1)}-${padDate(date.getDate())}`;
@@ -9,11 +10,20 @@ const DatePicker = ({ isOpen, date, onChange, onClose }) => {
     const parsed = new Date(date);
     return isNaN(parsed.getTime()) ? new Date() : parsed;
   });
+  
+  const { user } = useContext(AuthContext);
+  const startPref = user?.preferences?.startOfWeek || 'sunday';
+  
+  const getStartDayIndex = (pref) => {
+    const index = ['sunday', 'monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday'].indexOf(pref);
+    return index !== -1 ? index : 0;
+  };
 
   const getDaysInMonth = (d) => new Date(d.getFullYear(), d.getMonth() + 1, 0).getDate();
   const getFirstDayOfMonth = (d) => {
     const day = new Date(d.getFullYear(), d.getMonth(), 1).getDay();
-    return day === 0 ? 6 : day - 1; // Adjust so Monday is 0, Sunday is 6
+    const prefIndex = getStartDayIndex(startPref);
+    return (day - prefIndex + 7) % 7;
   };
 
   const handleDateSelect = (day) => {
@@ -69,7 +79,11 @@ const DatePicker = ({ isOpen, date, onChange, onClose }) => {
       </div>
 
       <div className='grid grid-cols-7 gap-1 mb-1'>
-        {['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'].map((d) => (
+        {(() => {
+          const days = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
+          const idx = getStartDayIndex(startPref);
+          return [...days.slice(idx), ...days.slice(0, idx)];
+        })().map((d) => (
           <div key={d} className='text-gray-500 text-[10px] font-bold tracking-wide text-center py-1.5'>{d}</div>
         ))}
       </div>

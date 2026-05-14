@@ -4,11 +4,12 @@ import Dashboard from './pages/Dashboard.jsx'
 import { Toaster } from 'sonner'
 import { AuthContext } from './api/AuthContext.jsx'
 import { useContext } from 'react'
+import LoadingSpinner from './components/LoadingSpinner.jsx'
 
 function App() {
   const {user, loading} = useContext(AuthContext)
   
-  if(loading) return <div>Loading...</div>
+  if(loading) return <LoadingSpinner message="Authenticating..." fullScreen={true} />
   
   return (
       <Router>

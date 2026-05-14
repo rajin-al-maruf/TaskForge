@@ -32,7 +32,7 @@ const registerUser = async (req, res) => {
             success: true,
             token,
             message: "User registered successfully!!",
-            user: {id: user._id, firstName: user.firstName, lastName: user.lastName, email: user.email, userType: user.userType, profilePicture: user.profilePicture}
+            user: {id: user._id, firstName: user.firstName, lastName: user.lastName, email: user.email, userType: user.userType, profilePicture: user.profilePicture, preferences: user.preferences}
         })
     } catch (error) {
         console.error("registerUser error", error);
@@ -66,13 +66,49 @@ const loginUser = async (req, res) => {
             success: true,
             message: "User login successfull!!",
             token,
-            user: {id: user._id, firstName: user.firstName, lastName: user.lastName, email: user.email, userType: user.userType, profilePicture: user.profilePicture}
+            user: {id: user._id, firstName: user.firstName, lastName: user.lastName, email: user.email, userType: user.userType, profilePicture: user.profilePicture, preferences: user.preferences}
         })
     } catch (error) {
         console.error("loginUser error", error);
         res.status(500).json({ success: false, message: "Internal server error"})
     }
 }
+
+const socialLoginUser = async (req, res) => {
+    try {
+        const { email, firstName, lastName, profilePicture } = req.body;
+
+        if (!email) {
+            return res.status(400).json({ success: false, message: "Email is required from social provider" });
+        }
+
+        let user = await User.findOne({ email });
+        
+        if (!user) {
+            // Create new user with a strong random password since they use social login
+            const generatedPassword = Math.random().toString(36).slice(-8) + Math.random().toString(36).slice(-8) + "A1!";
+            user = await User.create({
+                firstName: firstName || "User",
+                lastName: lastName || "",
+                email,
+                password: generatedPassword,
+                profilePicture: profilePicture || ""
+            });
+        }
+
+        const token = jwt.sign({ id: user._id }, process.env.JWT_SECRET);
+
+        res.status(200).json({
+            success: true,
+            message: "Social login successful!!",
+            token,
+            user: { id: user._id, firstName: user.firstName, lastName: user.lastName, email: user.email, userType: user.userType, profilePicture: user.profilePicture, preferences: user.preferences }
+        });
+    } catch (error) {
+        console.error("socialLoginUser error", error);
+        res.status(500).json({ success: false, message: "Internal server error" });
+    }
+};
 
 const updateProfile = async (req, res) => {
     try {
@@ -81,7 +117,7 @@ const updateProfile = async (req, res) => {
         if (!token) return res.status(401).json({ success: false, message: "Unauthorized" });
         const decoded = jwt.verify(token, process.env.JWT_SECRET);
         
-        const { firstName, lastName, email, profilePicture } = req.body;
+        const { firstName, lastName, email, profilePicture, preferences, userType } = req.body;
         
         // Validate email if it's being updated
         if (email) {
@@ -96,10 +132,18 @@ const updateProfile = async (req, res) => {
             }
         }
 
+        const updateData = {};
+        if (firstName) updateData.firstName = firstName;
+        if (lastName) updateData.lastName = lastName;
+        if (email) updateData.email = email;
+        if (profilePicture !== undefined) updateData.profilePicture = profilePicture;
+        if (preferences) updateData.preferences = preferences;
+        if (userType === 'pro' || userType === 'free') updateData.userType = userType;
+
         // Find user and update their details
         const updatedUser = await User.findByIdAndUpdate(
             decoded.id,
-            { firstName, lastName, email, profilePicture },
+            { $set: updateData },
             { new: true, runValidators: true }
         ).select('-password'); 
         
@@ -158,4 +202,4 @@ const updatePassword = async (req, res) => {
     }
 };
 
-export {registerUser, loginUser, updateProfile, deleteAccount, updatePassword}
+export {registerUser, loginUser, socialLoginUser, updateProfile, deleteAccount, updatePassword}

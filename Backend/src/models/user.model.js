@@ -40,6 +40,12 @@ const userSchema = new Schema(
             enum: ['free', 'pro'],
             default: 'free'
         },
+            preferences: {
+                startOfWeek: { type: String, default: 'sunday' },
+                timeFormat: { type: String, default: '12h' },
+                soundEnabled: { type: Boolean, default: true }
+            }
+
     },
     {
         timestamps: true

@@ -177,11 +177,6 @@ const AccountSettings = ({ setActiveTab, onClose }) => {
               <span className="text-[10px] text-gray-500">{isProUser ? 'All features unlocked' : 'Basic features'}</span>
             </div>
           </div>
-          {!isProUser && (
-            <button type="button" onClick={() => setActiveTab('billing')} className="px-3 py-1.5 bg-white/10 hover:bg-white/20 text-white text-[10px] font-semibold uppercase tracking-wider rounded-lg transition-colors cursor-pointer">
-              Upgrade
-            </button>
-          )}
         </div>
         
         <form onSubmit={handleSave} className="space-y-4">

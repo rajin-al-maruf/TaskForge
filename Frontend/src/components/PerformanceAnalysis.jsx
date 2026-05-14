@@ -22,7 +22,7 @@ const CustomTooltip = ({ active, payload, label, chartView, activeBar }) => {
     const isVisible = label === activeBar;
     
     return (
-      <div className={`z-50 bg-neutral-900/95 backdrop-blur-xl border border-neutral-800/80 shadow-xl rounded-lg py-1.5 px-3 flex flex-col gap-0.5 pointer-events-none transition-all duration-200 origin-bottom ${isVisible ? 'opacity-100 scale-100' : 'opacity-0 scale-95'}`}>
+      <div className={`bg-neutral-900/95 backdrop-blur-xl border border-neutral-800/80 shadow-xl rounded-lg py-1.5 px-3 flex flex-col gap-0.5 pointer-events-none transition-all duration-200 origin-bottom ${isVisible ? 'opacity-100 scale-100' : 'opacity-0 scale-95'}`}>
         <span className="text-gray-500 text-[9px] font-semibold uppercase tracking-widest">{label}</span>
         <div className="flex items-center gap-1.5">
           <span className={`w-1.5 h-1.5 rounded-full ${isTasks ? 'bg-brand-primary' : 'bg-teal-400'}`} />
@@ -42,7 +42,7 @@ const CustomPieTooltip = ({ active, payload }) => {
     const data = payload[0].payload;
     if (data.name === 'No Tasks') return null;
     return (
-      <div className="z-50 bg-neutral-900/95 backdrop-blur-xl border border-neutral-800/80 shadow-xl rounded-lg py-1.5 px-3 flex flex-col gap-0.5 pointer-events-none animate-in fade-in zoom-in-95 duration-200">
+      <div className="bg-neutral-900/95 backdrop-blur-xl border border-neutral-800/80 shadow-xl rounded-lg py-1.5 px-3 flex flex-col gap-0.5 pointer-events-none animate-in fade-in zoom-in-95 duration-200">
         <span className="text-gray-500 text-[9px] font-semibold uppercase tracking-widest">{data.name}</span>
         <div className="flex items-center gap-1.5">
           <span className="w-1.5 h-1.5 rounded-full" style={{ backgroundColor: data.color }} />
@@ -62,7 +62,7 @@ const CustomRadarTooltip = ({ active, payload, label }) => {
     const data = payload[0].payload;
     if (label === 'No Tasks') return null;
     return (
-      <div className="z-50 bg-neutral-900/95 backdrop-blur-xl border border-neutral-800/80 shadow-xl rounded-lg py-1.5 px-3 flex flex-col gap-0.5 pointer-events-none animate-in fade-in zoom-in-95 duration-200">
+      <div className="bg-neutral-900/95 backdrop-blur-xl border border-neutral-800/80 shadow-xl rounded-lg py-1.5 px-3 flex flex-col gap-0.5 pointer-events-none animate-in fade-in zoom-in-95 duration-200">
         <span className="text-gray-500 text-[9px] font-semibold uppercase tracking-widest">{label}</span>
         <div className="flex items-center gap-1.5">
           <span className="w-1.5 h-1.5 rounded-full bg-brand-primary" />
@@ -252,11 +252,11 @@ const PerformanceAnalysis = ({ tasks = [] }) => {
         </div>
         
         {/* Global Time Range Selector */}
-        <div className="relative shrink-0 z-50" ref={timeDropdownRef}>
+        <div className="relative shrink-0 z-30 w-40" ref={timeDropdownRef}>
           <button
             type="button"
             onClick={() => setIsTimeDropdownOpen(!isTimeDropdownOpen)}
-            className="flex items-center justify-between w-40 bg-neutral-900/80 backdrop-blur-md border border-neutral-800 text-white text-sm font-medium py-2.5 px-4 rounded-xl outline-none focus:border-brand-primary transition-colors cursor-pointer shadow-sm hover:bg-neutral-800"
+            className="flex items-center justify-between w-full bg-neutral-900/80 backdrop-blur-md border border-neutral-800 text-white text-sm font-medium py-2.5 px-4 rounded-xl outline-none focus:border-brand-primary transition-colors cursor-pointer shadow-sm hover:bg-neutral-800"
           >
             <span>{timeRange === '1' ? 'Today' : timeRange === '7' ? 'Last 7 Days' : 'Last 28 Days'}</span>
             <FaChevronDown size={12} className={`text-gray-400 transition-transform duration-200 ${isTimeDropdownOpen ? 'rotate-180' : ''}`} />
@@ -340,7 +340,7 @@ const PerformanceAnalysis = ({ tasks = [] }) => {
                     cursor={false} 
                     content={<CustomTooltip chartView={chartView} activeBar={activeBar} />} 
                     isAnimationActive={false}
-                    wrapperStyle={{ zIndex: 100 }}
+                    wrapperStyle={{ zIndex: 20 }}
                   />
                   
                   {chartView === 'tasks' ? (
@@ -405,7 +405,7 @@ const PerformanceAnalysis = ({ tasks = [] }) => {
                         />
                       ))}
                     </Pie>
-                    <Tooltip cursor={false} content={<CustomPieTooltip />} isAnimationActive={false} wrapperStyle={{ zIndex: 100 }} />
+                    <Tooltip cursor={false} content={<CustomPieTooltip />} isAnimationActive={false} wrapperStyle={{ zIndex: 20 }} />
                   </PieChart>
                 </ResponsiveContainer>
                 <div className="absolute inset-0 flex flex-col items-center justify-center pointer-events-none">
@@ -432,7 +432,7 @@ const PerformanceAnalysis = ({ tasks = [] }) => {
                   <RadarChart cx="50%" cy="50%" outerRadius="65%" data={currentCategoryData}>
                     <PolarGrid stroke="#333" />
                     <PolarAngleAxis dataKey="list" tick={{ fill: '#9ca3af', fontSize: 10 }} />
-                    <Tooltip cursor={false} content={<CustomRadarTooltip />} isAnimationActive={false} wrapperStyle={{ zIndex: 100 }} />
+                    <Tooltip cursor={false} content={<CustomRadarTooltip />} isAnimationActive={false} wrapperStyle={{ zIndex: 20 }} />
                     <Radar name="Tasks" dataKey="tasks" stroke="var(--color-brand-primary)" fill="var(--color-brand-primary)" fillOpacity={0.4} />
                   </RadarChart>
                 </ResponsiveContainer>
@@ -457,7 +457,7 @@ const PerformanceAnalysis = ({ tasks = [] }) => {
                         />
                       ))}
                     </Pie>
-                    <Tooltip cursor={false} content={<CustomPieTooltip />} isAnimationActive={false} wrapperStyle={{ zIndex: 100 }} />
+                    <Tooltip cursor={false} content={<CustomPieTooltip />} isAnimationActive={false} wrapperStyle={{ zIndex: 20 }} />
                   </PieChart>
                 </ResponsiveContainer>
                 <div className="absolute inset-0 flex flex-col items-center justify-center pointer-events-none">

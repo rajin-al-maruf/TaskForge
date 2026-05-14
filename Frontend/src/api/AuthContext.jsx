@@ -89,6 +89,28 @@ export const AuthProvider = ({children}) => {
         }
     }
 
+    const socialLogin = async (userData) => {
+        try {
+            const API_URL = import.meta.env?.VITE_API_URL || 'http://localhost:5000/api';
+            const response = await fetch(`${API_URL}/users/social-login`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(userData)
+            });
+            const data = await response.json();
+
+            if(data.token){
+                localStorage.setItem("token", data.token)
+                if(data.user) localStorage.setItem("user", JSON.stringify(data.user))
+                setUser(data.user || { loggedIn: true })
+            }
+            return data;
+        } catch (error) {
+            const message = error?.response?.data?.message || error.message
+            return { success: false, message }
+        }
+    }
+
     const logout = async () => {
         localStorage.removeItem("token")
         localStorage.removeItem("user")
@@ -102,6 +124,7 @@ export const AuthProvider = ({children}) => {
             setLoading: () => {}, // Dummy function to prevent Router unmounting!
             register, 
             login, 
+            socialLogin,
             logout,
             setUser,
             theme,

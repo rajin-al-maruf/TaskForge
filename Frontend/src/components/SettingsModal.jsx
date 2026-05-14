@@ -1,20 +1,21 @@
 import { useState, useEffect, useContext } from 'react';
 import { createPortal } from 'react-dom';
 import { AuthContext } from '../api/AuthContext.jsx';
-import { FaUser, FaPalette, FaCreditCard } from 'react-icons/fa';
+import { FaUser, FaPalette, FaCreditCard, FaSlidersH } from 'react-icons/fa';
 import AccountSettings from './settings/AccountSettings.jsx';
 import AppearanceSettings from './settings/AppearanceSettings.jsx';
-import BillingSettings from './settings/BillingSettings.jsx';
+import PreferencesSettings from './settings/PreferencesSettings.jsx';
 
-const SettingsModal = ({ isOpen, onClose }) => {
+const SettingsModal = ({ isOpen, onClose, initialTab = 'account' }) => {
   const { user } = useContext(AuthContext);
   const [isMounted, setIsMounted] = useState(false);
   const [isVisible, setIsVisible] = useState(false);
-  const [activeTab, setActiveTab] = useState('account');
+  const [activeTab, setActiveTab] = useState(initialTab);
   
   useEffect(() => {
     if (isOpen) {
       setIsMounted(true);
+      setActiveTab(initialTab);
       const timer = setTimeout(() => setIsVisible(true), 10);
       return () => clearTimeout(timer);
     } else {
@@ -22,14 +23,14 @@ const SettingsModal = ({ isOpen, onClose }) => {
       const timer = setTimeout(() => setIsMounted(false), 300);
       return () => clearTimeout(timer);
     }
-  }, [isOpen]);
+  }, [isOpen, initialTab]);
 
   if (!isMounted || !user) return null;
 
   const tabs = [
     { id: 'account', label: 'Account', icon: FaUser },
     { id: 'appearance', label: 'Appearance', icon: FaPalette },
-    { id: 'billing', label: 'Billing & Plan', icon: FaCreditCard },
+    { id: 'preferences', label: 'Preferences', icon: FaSlidersH },
   ];
 
   return createPortal(
@@ -68,7 +69,7 @@ const SettingsModal = ({ isOpen, onClose }) => {
           <div className="p-6 flex-1 overflow-y-auto [&::-webkit-scrollbar]:w-1.5 [&::-webkit-scrollbar-track]:bg-transparent [&::-webkit-scrollbar-thumb]:bg-neutral-800 [&::-webkit-scrollbar-thumb]:rounded-full hover:[&::-webkit-scrollbar-thumb]:bg-neutral-700">
             {activeTab === 'account' && <AccountSettings setActiveTab={setActiveTab} onClose={onClose} />}
             {activeTab === 'appearance' && <AppearanceSettings />}
-            {activeTab === 'billing' && <BillingSettings />}
+            {activeTab === 'preferences' && <PreferencesSettings />}
           </div>
         </div>
       </div>

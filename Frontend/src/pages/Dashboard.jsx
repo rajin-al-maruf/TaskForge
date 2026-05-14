@@ -9,6 +9,7 @@ import TaskModal from '../components/TaskModal.jsx'
 import { createList, deleteList } from '../api/listApi.js'
 import PerformanceAnalysis from '../components/PerformanceAnalysis.jsx'
 import { useTasks, organizeTasks, priorityOrder } from '../hooks/useTasks.js'
+import LoadingSpinner from '../components/LoadingSpinner.jsx'
 
 const Dashboard = () => {
   const { tasks, customLists, setCustomLists, isLoading, fetchError, saveTask, removeTask, toggleTaskComplete } = useTasks();
@@ -138,6 +139,10 @@ const Dashboard = () => {
   const getLocalDateKey = () => {
     const now = new Date()
     return `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')}`
+  }
+
+  if (isLoading) {
+    return <LoadingSpinner message="Loading workspace..." fullScreen={true} />
   }
 
   return (

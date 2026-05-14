@@ -21,8 +21,9 @@ const timeOptions = Array.from({ length: 24 * 4 }).map((_, i) => {
   return `${String(h).padStart(2, '0')}:${String(m).padStart(2, '0')}`;
 });
 
-const formatDisplayTime = (timeStr) => {
+const formatDisplayTime = (timeStr, format = '12h') => {
   if (!timeStr) return '';
+  if (format === '24h') return timeStr;
   const [h, m] = timeStr.split(':').map(Number);
   const ampm = h >= 12 ? 'PM' : 'AM';
   const hour12 = h % 12 || 12;
@@ -52,6 +53,7 @@ const TaskModal = ({ isOpen, onClose, onSave, editingTask, error, defaultDate = 
   
   const { user } = useContext(AuthContext);
   const isProUser = user?.userType === 'pro';
+  const timePref = user?.preferences?.timeFormat || '12h';
   const listRef = useRef(null);
   const dateRef = useRef(null);
   const timeRef = useRef(null);
@@ -176,7 +178,7 @@ const TaskModal = ({ isOpen, onClose, onSave, editingTask, error, defaultDate = 
   if (!isMounted) return null;
 
   return (
-    <div className={`fixed inset-0 z-20 bg-black/50 flex p-4 overflow-y-auto backdrop-blur-[2px] transition-all duration-300 ${isVisible ? 'opacity-100' : 'opacity-0'}`}>
+    <div className={`fixed inset-0 z-[60] bg-black/50 flex p-4 overflow-y-auto backdrop-blur-[2px] transition-all duration-300 ${isVisible ? 'opacity-100' : 'opacity-0'}`}>
       <div className={`w-full max-w-xl bg-neutral-900 border border-neutral-800/60 rounded-xl shadow-2xl transition-all duration-300 m-auto ${isVisible ? 'scale-100 translate-y-0' : 'scale-95 translate-y-4'}`}>
         {/* Header */}
         <div className='flex items-center justify-between px-6 py-4 border-b border-neutral-800 bg-neutral-900/50 rounded-t-xl'>
@@ -312,7 +314,7 @@ const TaskModal = ({ isOpen, onClose, onSave, editingTask, error, defaultDate = 
                 }`}
               >
                 <FaRegClock className={formData.time ? 'text-brand-primary' : 'text-gray-400'} />
-                {formData.time ? formatDisplayTime(formData.time) : 'Time'}
+                {formData.time ? formatDisplayTime(formData.time, timePref) : 'Time'}
               </button>
 
               <div
@@ -350,7 +352,7 @@ const TaskModal = ({ isOpen, onClose, onSave, editingTask, error, defaultDate = 
                         : 'text-gray-400 hover:bg-neutral-800/50 hover:text-white'
                     }`}
                   >
-                    {formatDisplayTime(time)}
+                    {formatDisplayTime(time, timePref)}
                   </button>
                 ))}
               </div>

@@ -1,7 +1,30 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useContext } from 'react';
 import { toast } from 'sonner';
 import { getTasks, createTask, updateTask, deleteTask } from '../api/taskApi.js';
 import { getLists, createList as createListApi, deleteList as deleteListApi } from '../api/listApi.js';
+import { AuthContext } from '../api/AuthContext.jsx';
+
+const playSuccessSound = () => {
+  try {
+    const AudioContext = window.AudioContext || window.webkitAudioContext;
+    if (!AudioContext) return;
+    const ctx = new AudioContext();
+    const osc = ctx.createOscillator();
+    const gain = ctx.createGain();
+    osc.connect(gain);
+    gain.connect(ctx.destination);
+    osc.type = 'sine';
+    osc.frequency.setValueAtTime(600, ctx.currentTime);
+    osc.frequency.exponentialRampToValueAtTime(1200, ctx.currentTime + 0.1);
+    gain.gain.setValueAtTime(0, ctx.currentTime);
+    gain.gain.linearRampToValueAtTime(0.2, ctx.currentTime + 0.05);
+    gain.gain.linearRampToValueAtTime(0, ctx.currentTime + 0.2);
+    osc.start(ctx.currentTime);
+    osc.stop(ctx.currentTime + 0.2);
+  } catch (e) {
+    console.error('Audio play failed', e);
+  }
+};
 
 export const priorityOrder = { high: 1, medium: 2, low: 3, none: 4 };
 
@@ -13,6 +36,7 @@ export const organizeTasks = (taskArray) => {
 };
 
 export const useTasks = () => {
+  const { user } = useContext(AuthContext);
   const [tasks, setTasks] = useState([]);
   const [customLists, setCustomLists] = useState([]);
   const [isLoading, setIsLoading] = useState(true);
@@ -111,6 +135,10 @@ export const useTasks = () => {
     const updatePayload = { status: nextStatus };
     if (nextStatus === 'completed') {
       updatePayload.completedAt = new Date().toISOString();
+      
+      if (user?.preferences?.soundEnabled !== false) {
+        playSuccessSound();
+      }
     }
     try {
       const response = await updateTask(task._id, updatePayload);
