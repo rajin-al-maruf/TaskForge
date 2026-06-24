@@ -6,7 +6,7 @@ import { GrTarget } from 'react-icons/gr';
 import { FaArrowRight, FaEye, FaEyeSlash } from 'react-icons/fa';
 import { FcGoogle } from 'react-icons/fc';
 import { auth, googleProvider } from '../api/firebase.js';
-import { signInWithPopup, signInWithRedirect, getRedirectResult } from 'firebase/auth';
+import { signInWithPopup, signInWithRedirect, getRedirectResult, onAuthStateChanged } from 'firebase/auth';
 
 const AuthPage = () => {
   const [isLogin, setIsLogin] = useState(true);
@@ -22,11 +22,13 @@ const AuthPage = () => {
 
   useEffect(() => {
     const handleRedirectResult = async () => {
+      let handled = false;
       try {
         const result = await getRedirectResult(auth);
         
         if (result) {
           // User has just been redirected back from the provider.
+          handled = true;
           setIsSocialSubmitting(true);
           const user = result.user;
           const nameParts = user.displayName ? user.displayName.split(' ') : ['User'];
@@ -52,7 +54,40 @@ const AuthPage = () => {
         setError(err.message || "Authentication failed during redirect.");
         setIsSocialSubmitting(false);
       } finally {
+        // In case getRedirectResult didn't return a result (some browsers block redirect state),
+        // listen for auth state changes as a fallback.
+        const unsubscribe = onAuthStateChanged(auth, async (user) => {
+          if (!user || handled) return;
+          handled = true;
+          setIsSocialSubmitting(true);
+
+          const nameParts = user.displayName ? user.displayName.split(' ') : ['User'];
+          const firstName = nameParts[0];
+          const lastName = nameParts.length > 1 ? nameParts.slice(1).join(' ') : '';
+
+          try {
+            const res = await socialLogin({
+              email: user.email,
+              firstName,
+              lastName,
+              profilePicture: user.photoURL
+            });
+
+            if (res.token) {
+              toast.success(`Welcome to TaskForge, ${firstName}! ✨`);
+              navigate('/dashboard');
+            } else {
+              setError(res.message);
+              setIsSocialSubmitting(false);
+            }
+          } catch (e) {
+            setError(e.message || 'Authentication failed during redirect.');
+            setIsSocialSubmitting(false);
+          }
+        });
+
         setIsCheckingRedirect(false);
+        return () => unsubscribe();
       }
     };
     handleRedirectResult();
