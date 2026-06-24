@@ -6,14 +6,13 @@ import { GrTarget } from 'react-icons/gr';
 import { FaArrowRight, FaEye, FaEyeSlash } from 'react-icons/fa';
 import { FcGoogle } from 'react-icons/fc';
 import { auth, googleProvider } from '../api/firebase.js';
-import { signInWithPopup, signInWithRedirect, getRedirectResult, onAuthStateChanged } from 'firebase/auth';
+import { signInWithPopup, signInWithRedirect, getRedirectResult } from 'firebase/auth';
 
 const AuthPage = () => {
   const [isLogin, setIsLogin] = useState(true);
   const [formData, setFormData] = useState({ firstName: '', lastName: '', email: '', password: '' });
   const [error, setError] = useState(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const [isSocialSubmitting, setIsSocialSubmitting] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
   const [isCheckingRedirect, setIsCheckingRedirect] = useState(true);
   
@@ -22,14 +21,12 @@ const AuthPage = () => {
 
   useEffect(() => {
     const handleRedirectResult = async () => {
-      let handled = false;
       try {
         const result = await getRedirectResult(auth);
         
         if (result) {
           // User has just been redirected back from the provider.
-          handled = true;
-          setIsSocialSubmitting(true);
+          setIsSubmitting(true);
           const user = result.user;
           const nameParts = user.displayName ? user.displayName.split(' ') : ['User'];
           const firstName = nameParts[0];
@@ -47,47 +44,14 @@ const AuthPage = () => {
             navigate('/dashboard');
           } else {
             setError(res.message);
-            setIsSocialSubmitting(false);
+            setIsSubmitting(false);
           }
         }
       } catch (err) {
         setError(err.message || "Authentication failed during redirect.");
-        setIsSocialSubmitting(false);
+        setIsSubmitting(false);
       } finally {
-        // In case getRedirectResult didn't return a result (some browsers block redirect state),
-        // listen for auth state changes as a fallback.
-        const unsubscribe = onAuthStateChanged(auth, async (user) => {
-          if (!user || handled) return;
-          handled = true;
-          setIsSocialSubmitting(true);
-
-          const nameParts = user.displayName ? user.displayName.split(' ') : ['User'];
-          const firstName = nameParts[0];
-          const lastName = nameParts.length > 1 ? nameParts.slice(1).join(' ') : '';
-
-          try {
-            const res = await socialLogin({
-              email: user.email,
-              firstName,
-              lastName,
-              profilePicture: user.photoURL
-            });
-
-            if (res.token) {
-              toast.success(`Welcome to TaskForge, ${firstName}! ✨`);
-              navigate('/dashboard');
-            } else {
-              setError(res.message);
-              setIsSocialSubmitting(false);
-            }
-          } catch (e) {
-            setError(e.message || 'Authentication failed during redirect.');
-            setIsSocialSubmitting(false);
-          }
-        });
-
         setIsCheckingRedirect(false);
-        return () => unsubscribe();
       }
     };
     handleRedirectResult();
@@ -136,7 +100,7 @@ const AuthPage = () => {
 
   const handleSocialAuth = async (provider) => {
     try {
-      setIsSocialSubmitting(true);
+      setIsSubmitting(true);
       setError(null);
       const result = await signInWithPopup(auth, provider);
       const user = result.user;
@@ -157,7 +121,7 @@ const AuthPage = () => {
         navigate('/dashboard');
       } else {
         setError(res.message);
-        setIsSocialSubmitting(false);
+        setIsSubmitting(false);
       }
     } catch (err) {
       if (err.code === 'auth/popup-blocked') {
@@ -167,10 +131,10 @@ const AuthPage = () => {
         await signInWithRedirect(auth, provider);
       } else if (err.code !== 'auth/popup-closed-by-user' && err.code !== 'auth/cancelled-popup-request') {
         setError(err.message || "Authentication failed. Please try again.");
-        setIsSocialSubmitting(false);
+        setIsSubmitting(false);
       } else {
         // User closed the popup, so we are no longer submitting.
-        setIsSocialSubmitting(false);
+        setIsSubmitting(false);
       }
     }
   };
@@ -275,13 +239,8 @@ const AuthPage = () => {
               type="button"
               onClick={() => handleSocialAuth(googleProvider)}
               className="flex items-center justify-center gap-2 w-full bg-neutral-800/50 hover:bg-neutral-800 border border-white/5 hover:border-white/10 text-white font-medium py-2.5 px-4 rounded-lg transition-all cursor-pointer shadow-sm"
-              disabled={isSocialSubmitting}
             >
-              {isSocialSubmitting ? (
-                <><span className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin"></span> Signing in...</>
-              ) : (
-                <><FcGoogle size={16} /> Google</>
-              )}
+              <FcGoogle size={16} /> Google
             </button>
           </div>
         </div>
