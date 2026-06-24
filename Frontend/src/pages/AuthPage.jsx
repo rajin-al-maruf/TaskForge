@@ -14,6 +14,7 @@ const AuthPage = () => {
   const [error, setError] = useState(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
+  const [isCheckingRedirect, setIsCheckingRedirect] = useState(true);
   
   const { login, register, socialLogin } = useContext(AuthContext);
   const navigate = useNavigate();
@@ -49,6 +50,8 @@ const AuthPage = () => {
       } catch (err) {
         setError(err.message || "Authentication failed during redirect.");
         setIsSubmitting(false);
+      } finally {
+        setIsCheckingRedirect(false);
       }
     };
     handleRedirectResult();
@@ -135,6 +138,15 @@ const AuthPage = () => {
       }
     }
   };
+
+  if (isCheckingRedirect) {
+    return (
+      <div className="relative flex min-h-screen flex-col items-center justify-center overflow-hidden bg-brand-bg font-sans text-white">
+        <div className="w-12 h-12 border-4 border-dashed rounded-full animate-spin border-brand-primary"></div>
+        <p className="mt-4 text-sm text-gray-400">Finalizing login...</p>
+      </div>
+    );
+  }
 
   return (
     <div className="relative flex min-h-screen flex-col items-center justify-center overflow-hidden bg-brand-bg font-sans text-white selection:bg-brand-primary/30 p-4">
