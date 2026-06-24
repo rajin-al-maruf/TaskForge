@@ -1,4 +1,4 @@
-import React, { useState, useContext } from 'react';
+import React, { useState, useContext, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { AuthContext } from '../api/AuthContext.jsx';
 import { toast } from 'sonner';
@@ -6,7 +6,7 @@ import { GrTarget } from 'react-icons/gr';
 import { FaArrowRight, FaEye, FaEyeSlash } from 'react-icons/fa';
 import { FcGoogle } from 'react-icons/fc';
 import { auth, googleProvider } from '../api/firebase.js';
-import { signInWithPopup } from 'firebase/auth';
+import { signInWithPopup, signInWithRedirect, getRedirectResult } from 'firebase/auth';
 
 const AuthPage = () => {
   const [isLogin, setIsLogin] = useState(true);
@@ -17,6 +17,42 @@ const AuthPage = () => {
   
   const { login, register, socialLogin } = useContext(AuthContext);
   const navigate = useNavigate();
+
+  useEffect(() => {
+    const handleRedirectResult = async () => {
+      try {
+        const result = await getRedirectResult(auth);
+        
+        if (result) {
+          // User has just been redirected back from the provider.
+          setIsSubmitting(true);
+          const user = result.user;
+          const nameParts = user.displayName ? user.displayName.split(' ') : ['User'];
+          const firstName = nameParts[0];
+          const lastName = nameParts.length > 1 ? nameParts.slice(1).join(' ') : '';
+
+          const res = await socialLogin({
+            email: user.email,
+            firstName,
+            lastName,
+            profilePicture: user.photoURL
+          });
+
+          if (res.token) {
+            toast.success(`Welcome to TaskForge, ${firstName}! ✨`);
+            navigate('/dashboard');
+          } else {
+            setError(res.message);
+            setIsSubmitting(false);
+          }
+        }
+      } catch (err) {
+        setError(err.message || "Authentication failed during redirect.");
+        setIsSubmitting(false);
+      }
+    };
+    handleRedirectResult();
+  }, [socialLogin, navigate]);
 
   const handleInputChange = (e) => {
     setFormData((prev) => ({ ...prev, [e.target.name]: e.target.value }));
@@ -82,13 +118,21 @@ const AuthPage = () => {
         navigate('/dashboard');
       } else {
         setError(res.message);
+        setIsSubmitting(false);
       }
     } catch (err) {
-      if (err.code !== 'auth/popup-closed-by-user' && err.code !== 'auth/cancelled-popup-request') {
-        setError(err.message || "Authentication failed");
+      if (err.code === 'auth/popup-blocked') {
+        toast.info("Popup blocked. Trying redirect instead...");
+        // The page will redirect, so we don't need to manage state further here.
+        // The useEffect hook will handle the result on the next page load.
+        await signInWithRedirect(auth, provider);
+      } else if (err.code !== 'auth/popup-closed-by-user' && err.code !== 'auth/cancelled-popup-request') {
+        setError(err.message || "Authentication failed. Please try again.");
+        setIsSubmitting(false);
+      } else {
+        // User closed the popup, so we are no longer submitting.
+        setIsSubmitting(false);
       }
-    } finally {
-      setIsSubmitting(false);
     }
   };
 
