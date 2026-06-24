@@ -156,7 +156,41 @@ export const useTasks = () => {
     }
   };
 
+  const createNewList = async (listName) => {
+    try {
+      const response = await createListApi({ name: listName });
+      if (response.success) {
+        setCustomLists((prev) => [...prev, response.list]);
+        toast.success('List created successfully');
+        return { success: true, list: response.list };
+      }
+      toast.error(response.message || 'Failed to create list');
+      return { success: false, message: response.message };
+    } catch (error) {
+      const errorMsg = error?.response?.data?.message || 'Failed to create list';
+      toast.error(errorMsg);
+      return { success: false, message: errorMsg };
+    }
+  };
+
+  const deleteExistingList = async (listId) => {
+    try {
+      const response = await deleteListApi(listId);
+      if (response.success) {
+        setCustomLists((prev) => prev.filter((list) => list._id !== listId));
+        toast.success('List deleted successfully');
+        return { success: true };
+      }
+      toast.error(response.message || 'Failed to delete list');
+      return { success: false, message: response.message };
+    } catch (error) {
+      const errorMsg = error?.response?.data?.message || 'Failed to delete list';
+      toast.error(errorMsg);
+      return { success: false, message: errorMsg };
+    }
+  };
+
   return {
-    tasks, customLists, setCustomLists, isLoading, fetchError, saveTask, removeTask, toggleTaskComplete
+    tasks, customLists, isLoading, fetchError, saveTask, removeTask, toggleTaskComplete, createNewList, deleteExistingList
   };
 };

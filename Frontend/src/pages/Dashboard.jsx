@@ -6,13 +6,12 @@ import TodayTasks from '../components/TodayTasks.jsx'
 import Calendar from '../components/Calendar.jsx'
 import ListTasks from '../components/ListTasks.jsx'
 import TaskModal from '../components/TaskModal.jsx'
-import { createList, deleteList } from '../api/listApi.js'
 import PerformanceAnalysis from '../components/PerformanceAnalysis.jsx'
-import { useTasks, organizeTasks, priorityOrder } from '../hooks/useTasks.js'
+import { useTasks, priorityOrder } from '../hooks/useTasks.js'
 import LoadingSpinner from '../components/LoadingSpinner.jsx'
 
 const Dashboard = () => {
-  const { tasks, customLists, setCustomLists, isLoading, fetchError, saveTask, removeTask, toggleTaskComplete } = useTasks();
+  const { tasks, customLists, isLoading, fetchError, saveTask, removeTask, toggleTaskComplete, createNewList, deleteExistingList } = useTasks();
   
   const [activeTab, setActiveTab] = useState('today')
   const [taskError, setTaskError] = useState('')
@@ -57,36 +56,19 @@ const Dashboard = () => {
   }
 
   const handleCreateList = async (listName) => {
-    try {
-      const response = await createList({ name: listName })
-      if (response.success) {
-        setCustomLists((prev) => [...prev, response.list])
-        setActiveTab(listName) // Auto-switch to the newly created list
-        toast.success('List created successfully')
-      } else {
-        toast.error(response.message || 'Failed to create list')
-      }
-    } catch (error) {
-      console.error('Failed to create list:', error)
-      toast.error(error?.response?.data?.message || 'Failed to create list')
+    const result = await createNewList(listName);
+    if (result.success) {
+      setActiveTab(listName); // Auto-switch to the newly created list
     }
   }
 
   const handleDeleteList = async (listId, listName) => {
-    try {
-      const response = await deleteList(listId);
-      if (response.success) {
-        setCustomLists((prev) => prev.filter((list) => list._id !== listId));
-        if (activeTab === listName) {
-          setActiveTab('tasks'); // Go back to My Tasks if viewing the deleted list
-        }
-        toast.success('List deleted successfully')
-      } else {
-        toast.error(response.message || 'Failed to delete list')
+    // Optional: Ask for confirmation before deleting
+    const result = await deleteExistingList(listId);
+    if (result.success) {
+      if (activeTab === listName) {
+        setActiveTab('tasks'); // Go back to My Tasks if viewing the deleted list
       }
-    } catch (error) {
-      console.error('Failed to delete list:', error);
-      toast.error(error?.response?.data?.message || 'Failed to delete list')
     }
   };
 
