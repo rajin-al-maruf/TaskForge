@@ -1,35 +1,18 @@
-const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:5000/api';
-const BASE_URL = `${API_URL}/lists`;
+import axiosInstance from './axiosInstance';
 
-const getHeaders = () => {
-  const token = localStorage.getItem('token');
-  return {
-    'Content-Type': 'application/json',
-    ...(token ? { Authorization: `Bearer ${token}` } : {})
-  };
-};
+const BASE_URL = '/lists';
 
 export const getLists = async () => {
-  const response = await fetch(BASE_URL, { headers: getHeaders() });
-  if (!response.ok) throw new Error('Failed to fetch lists');
-  return response.json();
+  const response = await axiosInstance.get(BASE_URL);
+  return response.data;
 };
 
 export const createList = async (data) => {
-  const response = await fetch(BASE_URL, {
-    method: 'POST',
-    headers: getHeaders(),
-    body: JSON.stringify(data),
-  });
-  if (!response.ok) throw new Error('Failed to create list');
-  return response.json();
+  const response = await axiosInstance.post(BASE_URL, data);
+  return response.data;
 };
 
 export const deleteList = async (id) => {
-  const response = await fetch(`${BASE_URL}/${id}`, {
-    method: 'DELETE',
-    headers: getHeaders(),
-  });
-  if (!response.ok) throw new Error('Failed to delete list');
-  return response.json();
+  const response = await axiosInstance.delete(`${BASE_URL}/${id}`);
+  return response.data;
 };

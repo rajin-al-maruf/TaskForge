@@ -10,4 +10,9 @@ const loginUser = async (userData) => {
     return res.data;
 }
 
-export {registerUser, loginUser}
+const socialLoginUser = async (userData) => {
+    const res = await axiosInstance.post('/users/social-login', userData);
+    return res.data;
+}
+
+export {registerUser, loginUser, socialLoginUser}

@@ -1,5 +1,5 @@
 import { createContext, useEffect, useState } from "react";
-import { loginUser, registerUser } from "./authApi.js";
+import { loginUser, registerUser, socialLoginUser } from "./authApi.js";
 
 export const AuthContext = createContext()
 
@@ -91,13 +91,7 @@ export const AuthProvider = ({children}) => {
 
     const socialLogin = async (userData) => {
         try {
-            const API_URL = import.meta.env?.VITE_API_URL || 'http://localhost:5000/api';
-            const response = await fetch(`${API_URL}/users/social-login`, {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify(userData)
-            });
-            const data = await response.json();
+            const data = await socialLoginUser(userData);
 
             if(data.token){
                 localStorage.setItem("token", data.token)
