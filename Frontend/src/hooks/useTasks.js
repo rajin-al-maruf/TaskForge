@@ -103,7 +103,7 @@ export const useTasks = () => {
       try {
         const response = await updateTask(taskId, { isArchived: true, archivedAt: new Date().toISOString() });
         if (response.success) {
-          setTasks((prev) => prev.map((task) => task._id === taskId ? { ...task, isArchived: true } : task));
+          setTasks((prev) => prev.filter((task) => task._id !== taskId));
           toast.success('Task archived and kept for analysis');
         } else {
           toast.error(response.message || 'Unable to archive task');

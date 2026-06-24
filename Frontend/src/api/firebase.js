@@ -16,8 +16,10 @@ const firebaseConfig = {
 if (import.meta.env.PROD) {
     for (const key in firebaseConfig) {
         if (!firebaseConfig[key]) {
+            // Convert camelCase to UPPER_SNAKE_CASE for a more accurate error message.
+            const envVarName = `VITE_FIREBASE_${key.replace(/([A-Z])/g, '_$1').toUpperCase()}`;
             // This will cause the app to crash with a clear error message during initialization if a variable is missing.
-            throw new Error(`Firebase config error: Missing environment variable VITE_FIREBASE_${key.toUpperCase()}. Please set it in your Vercel project settings.`);
+            throw new Error(`Firebase config error: Missing environment variable ${envVarName}. Please set it in your Vercel project settings.`);
         }
     }
 }
