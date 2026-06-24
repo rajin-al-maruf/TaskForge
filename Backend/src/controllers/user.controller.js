@@ -78,6 +78,9 @@ const socialLoginUser = async (req, res) => {
     try {
         const { email, firstName, lastName, profilePicture } = req.body;
 
+        // Log incoming social-login attempts for debugging (do NOT log sensitive data)
+        console.info(`[social-login] request - email=${email || 'N/A'} origin=${req.headers.origin || 'N/A'} ua=${req.headers['user-agent'] || 'N/A'} ip=${req.ip || req.connection?.remoteAddress || 'N/A'}`);
+
         if (!email) {
             return res.status(400).json({ success: false, message: "Email is required from social provider" });
         }
@@ -94,6 +97,8 @@ const socialLoginUser = async (req, res) => {
                 password: generatedPassword,
                 profilePicture: profilePicture || ""
             });
+
+            console.info(`[social-login] created new user - id=${user._id} email=${user.email}`);
         }
 
         const token = jwt.sign({ id: user._id }, process.env.JWT_SECRET);
@@ -105,7 +110,7 @@ const socialLoginUser = async (req, res) => {
             user: { id: user._id, firstName: user.firstName, lastName: user.lastName, email: user.email, userType: user.userType, profilePicture: user.profilePicture, preferences: user.preferences }
         });
     } catch (error) {
-        console.error("socialLoginUser error", error);
+        console.error("socialLoginUser error", { message: error.message, stack: error.stack, body: { ...(req.body || {}) } });
         res.status(500).json({ success: false, message: "Internal server error" });
     }
 };
